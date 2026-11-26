@@ -1,87 +1,197 @@
-# Adstack — ads as code
+# Adstack
 
-A small, declarative CLI for Google Search campaigns. Define campaigns in YAML, review the proposed changes as a plan, and apply them with explicit authorization. The initial example is the Klora competitor campaign: 17 ad groups, 50 exact-match keywords, eight campaign-level negative keywords, three reusable responsive search ad templates, and one dedicated daily budget.
+**Advertising campaigns as code.** Declare campaigns in YAML, review a plan of exactly what will change, then apply it: the workflow Terraform uses for infrastructure, built for ad platforms. An [MCP server](docs/mcp.md) lets AI assistants such as Claude validate, plan and (when you allow it) apply changes too.
 
-## Quick start (offline)
+[![CI](https://github.com/markwroberts0/adstack/actions/workflows/ci.yml/badge.svg)](https://github.com/markwroberts0/adstack/actions/workflows/ci.yml)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 
-Requires Python 3.11+.
+```console
+$ adstack plan --out launch.plan.json
+Adstack will perform the following actions in Google Ads account 123-456-7890:
 
-```bash
-python -m venv .venv
-source .venv/bin/activate   # Windows: .venv\Scripts\activate
-pip install -e '.[dev]'
-ads validate examples/klora.yaml
-ads preview examples/klora.yaml
-pytest -q
+  + campaign running-shoes  (status = PAUSED, type = SEARCH, bidding = MANUAL_CPC, networks = Google Search only, geo_targeting = PRESENCE)
+      + daily budget  (amount = 25.00 USD)
+      + location 2840
+      + negative keyword "free"
+      + negative keyword "jobs"
+      + ad group road  (cpc_bid = 1.10 USD)
+          + keyword [road running shoes]
+          + keyword [running shoes for men]
+          + responsive search ad  (template = running-shoes, headlines = 3, descriptions = 2, final_url = https://www.example.com/running-shoes)
+
+Plan: 9 to add, 0 to change, 0 to remove.
+
+$ adstack apply launch.plan.json
+...
+Apply complete! Resources: 9 added, 0 changed, 0 removed.
+Receipt: .adstack/receipts/20261126T133746Z-44e0f9dbfe49.json
 ```
 
-`validate` and `preview` do not make network requests. The preview assumes the campaign doesn't exist and cannot be applied. No Google account or GitHub connection is needed for these commands.
+This is the plan for the configuration shown [below](#configuration).
+
+## Why Adstack
+
+- **Reviewable.** Campaign changes go through pull requests and a plan you read before anything happens.
+- **Safe by default.** New campaigns start paused. Enabling a campaign, raising a budget or bid, and touching a campaign that is serving each need an explicit flag. A saved plan is re-verified against the live account before it is applied, and the platform validates every request before it commits. Adstack never deletes campaigns, ad groups, keywords or ads.
+- **Convergent.** The account is made to match the configuration. Changes made by hand show up in the next plan.
+- **AI-ready.** The MCP server gives assistants the same validate → plan → apply loop, with applying disabled unless you turn it on.
+- **Try it offline.** A local sandbox account runs the whole workflow without an ad account or credentials.
+
+**Status: alpha.** The first provider is **Google Ads** (Search campaigns with manual CPC bidding, exact-match keywords, responsive search ads, negative keywords and location targeting). The plan/apply logic is covered by tests against the sandbox, but the REST integration has not yet been exercised against a live Google Ads account; run it against a [test account](https://developers.google.com/google-ads/api/docs/best-practices/test-accounts) first. More providers are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Install
+
+Adstack needs Python 3.11 or later.
+
+```bash
+pip install "adstack[mcp] @ git+https://github.com/markwroberts0/adstack"   # CLI and MCP server
+```
+
+Omit `[mcp]` if you only need the CLI. To work on Adstack itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
+## Quick start (no ad account needed)
+
+```bash
+adstack init my-ads                   # write an annotated starter configuration
+adstack validate my-ads               # offline checks
+adstack plan my-ads --sandbox         # plan against a local sandbox account
+adstack apply my-ads --sandbox        # apply after typing 'yes'
+adstack plan my-ads --sandbox         # No changes.
+```
+
+The sandbox lives in `.adstack/sandbox/` in the current directory. It applies the same API operations Adstack sends to Google and enforces the same request rules, but it does not review ads or serve them. Two complete examples are in [`examples/`](examples/).
+
+## Configuration
+
+A configuration is one YAML file, or a directory of YAML files that are merged (like a Terraform module):
+
+```yaml
+version: 1
+
+provider:
+  google_ads:
+    namespace: example          # campaigns are named adstack:example:<campaign id>
+    currency: USD               # must match the account
+    customer_id: 123-456-7890   # optional: pin the account in code review
+
+ad_templates:
+  running-shoes:
+    final_url: https://www.example.com/running-shoes
+    headlines: [Running Shoes For Every Pace, Free Returns On All Shoes, Find Your Perfect Fit]
+    descriptions:
+      - Road, trail and track shoes from leading brands. Free shipping on orders over $50.
+      - Not the right fit? Return any pair within 60 days for a full refund.
+
+campaigns:
+  - id: running-shoes
+    status: PAUSED
+    daily_budget: 25.00
+    default_cpc: 1.10
+    locations: [2840]                     # United States
+    negative_keywords: ['"free"', '"jobs"']
+    ad_groups:
+      - id: road
+        ad_template: running-shoes
+        keywords: ['[road running shoes]', '[running shoes for men]']
+```
+
+Every option is described in [docs/configuration.md](docs/configuration.md).
+
+## Commands
+
+| Command | What it does |
+| --- | --- |
+| `adstack init [DIR]` | Write an annotated starter configuration. |
+| `adstack validate [PATH]` | Check the configuration offline. |
+| `adstack plan [PATH] [--out FILE]` | Read the account and show what would change. Changes nothing. `--prune` also pauses or removes managed resources that are no longer configured; `--validate` asks the platform to validate the changes too; `--detailed-exitcode` exits 2 when there are changes. |
+| `adstack apply PLAN_FILE` | Apply a saved plan after verifying the account hasn't changed since it was made. |
+| `adstack apply [PATH]` | Plan, then apply after you type `yes` (or `--auto-approve`). |
+| `adstack destroy [PATH]` | Pause every campaign Adstack manages. Nothing is deleted. |
+| `adstack show PLAN_FILE` | Display a saved plan (`--json` for machines). |
+| `adstack state list [PATH]` | List what Adstack manages in the account. |
+| `adstack report performance\|search-terms [PATH]` | Clicks, cost and conversions for the last 7, 14 or 30 days. |
+| `adstack mcp` | Run the MCP server over stdio. |
+
+`PATH` defaults to the current directory. Add `--sandbox` (or set `ADSTACK_SANDBOX=1`) to use the local sandbox account.
+
+Applying also needs an explicit flag when a plan would:
+
+| Flag | Needed when |
+| --- | --- |
+| `--allow-enable` | a paused campaign starts serving |
+| `--allow-budget-increase` | a budget or bid on an existing campaign or ad group increases |
+| `--allow-live-changes` | anything changes in a campaign that is serving now |
+
+Plan files and receipts (written to `.adstack/receipts/` after every apply) are never overwritten. Treat them as private operational data.
 
 ## Connect Google Ads
 
-Adstack targets the Google Ads REST API v26. Since September 2026, API access belongs to the Google Cloud project associated with your OAuth credentials, rather than a legacy developer token.
+Adstack uses the Google Ads REST API (v26). Since September 9, 2026, API access belongs to the Google Cloud project behind your OAuth credentials; a developer token is no longer needed.
 
 1. In [Google Cloud Console](https://console.cloud.google.com/apis/library/googleads.googleapis.com), select or create a project and enable the Google Ads API.
-2. On the Google Ads API Overview page, request Explorer access for production accounts. Test access only works against Google Ads test accounts. Start with a test account if possible.
-3. Configure the OAuth consent screen and create a Desktop OAuth client. The authorized Google user must have access to the Google Ads customer account. Obtain a refresh token with the `https://www.googleapis.com/auth/adwords` scope, following [Google's OAuth guide](https://developers.google.com/google-ads/api/docs/oauth/overview). If an external OAuth consent screen remains in Testing mode, refresh tokens may expire after seven days.
-4. Set these environment variables in your shell or local secret manager (never commit them):
+2. Request an [access level](https://developers.google.com/google-ads/api/docs/api-policy/access-levels) for the project. Test access works only with Google Ads test accounts; start there if you can.
+3. Configure the OAuth consent screen and create a Desktop OAuth client. The Google user who authorizes it must have access to the Google Ads account. Obtain a refresh token with the `https://www.googleapis.com/auth/adwords` scope ([Google's OAuth guide](https://developers.google.com/google-ads/api/docs/oauth/overview)). While an external consent screen is in Testing mode, refresh tokens can expire after seven days.
+4. Set the credentials in your environment or secret manager. Never commit them. See [`.env.example`](.env.example).
 
 ```bash
-export ADS_CUSTOMER_ID=1234567890  # replace with your actual customer ID
-export ADS_CLIENT_ID='...'
-export ADS_CLIENT_SECRET='...'
-export ADS_REFRESH_TOKEN='...'
-# Only if accessing the advertiser through a manager account:
-# export ADS_LOGIN_CUSTOMER_ID=9876543210
+export GOOGLE_ADS_CUSTOMER_ID=123-456-7890        # or provider.google_ads.customer_id
+export GOOGLE_ADS_CLIENT_ID='...'
+export GOOGLE_ADS_CLIENT_SECRET='...'
+export GOOGLE_ADS_REFRESH_TOKEN='...'
+# export GOOGLE_ADS_LOGIN_CUSTOMER_ID=111-222-3333  # only when using a manager account
+# export GOOGLE_ADS_ACCESS_TOKEN='...'              # alternative: a short-lived access token
 ```
 
-Alternatively, set `ADS_ACCESS_TOKEN` to a short-lived OAuth access token with the Ads scope, instead of the client credentials. `--customer-id` can override `ADS_CUSTOMER_ID` for a command. `.env.example` documents variables but is not loaded automatically. Treat plan and receipt files as private operational data. Do not paste OAuth secrets into a chat or commit them into Git.
+Then use the commands without `--sandbox`. Before enabling a campaign, check billing, ad policy status, landing pages and conversion tracking in Google Ads: Adstack doesn't manage those.
 
-## Manage a campaign
-
-The example uses a proposed USD 10 average daily budget, USD 0.75 manual CPC at the ad-group level, US geographic presence targeting (GeoTargetConstant 2840), Google Search only, no search partners or display expansion, and a paused campaign. Review the settings and ad claims before uploading. The daily budget is Google's average daily budget, not a hard per-day spending cap. The CPC is a starting assumption, not measured auction data. A new campaign cannot be created enabled.
+## Use with AI assistants (MCP)
 
 ```bash
-# 1. Read live configuration and write the proposed mutations.
-ads plan examples/klora.yaml --out first.plan.json
-
-# 2. Inspect first.plan.json, then validate the identical plan against Google.
-ads apply examples/klora.yaml --plan first.plan.json
-
-# 3. Explicitly commit the reviewed plan (still PAUSED).
-ads apply examples/klora.yaml --plan first.plan.json --commit \
-  --confirm-account "$ADS_CUSTOMER_ID" --receipt first.receipt.json
-
-# 4. Re-plan; this should be a no-op after a successful first creation.
-ads plan examples/klora.yaml --out after.plan.json
+claude mcp add adstack -- adstack mcp --sandbox --root /path/to/your/ads    # Claude Code, sandbox
 ```
 
-You can also ask Google to validate the operations while planning using `--validate-api`. Google validation uses `validateOnly=true`, which doesn't commit mutations.
+The server's tools are `validate`, `plan`, `show_plan`, `state`, `report` and `example_config`. A configuration can be a path inside `--root` or YAML text. The `apply` tool appears only with `--sandbox` or `--allow-apply`. It accepts only a plan the server created, requires the account ID as confirmation and the same permission flags as the CLI, and re-verifies the plan against the live account. See [docs/mcp.md](docs/mcp.md) for Claude Desktop and other clients.
 
-To activate a campaign, explicitly change `status` to `ENABLED` in the YAML, create a **new** plan, review it, and apply with `--commit --confirm-account ... --receipt ... --allow-enable`. Check billing, ad policy status, landing pages and conversion tracking before enabling. The CLI does not provision tracking or verify that the desired conversion actions exist. Existing live campaign mutations also require `--allow-live-changes`; budget or bid increases on existing resources require `--allow-budget-increase`. These flags are in addition to `--commit`. To pause a currently live campaign, set `status: PAUSED`, review, and use the live-changes flag.
+## Use in CI
 
-```bash
-ads performance --days 30
-ads search-terms --days 7
+Run offline validation (and, if you choose, a plan) on every pull request, and apply reviewed plans deliberately:
+
+```yaml
+# .github/workflows/ads.yml in the repository that holds your configuration
+on: pull_request
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.13"
+      - run: pip install "adstack @ git+https://github.com/markwroberts0/adstack"
+      - run: adstack validate ads/
 ```
 
-Reports return Google Ads JSON for the selected account (all campaigns, not just Adstack campaigns). Cost is reported in micros of the account currency; divide by 1,000,000. Google withholds some search terms for privacy. The report uses the account's configured conversions, not a custom Klora conversion definition.
+Planning against the real account needs credentials. Don't expose them to workflows that run untrusted pull request code.
 
-## Reconciliation contract
+## How it works
 
-- The campaign's stable identity is `aac:<namespace>:<id>`; group identity is `aac:<id>`. Reserve those names exclusively for this tool. Do not rename them in Google Ads. The prefix is an ownership convention, not a cryptographically verified label or state lock. There is no automatic adoption of differently named campaigns. A matching name is treated as managed. A conflicting type or shared budget fails closed.
-- Missing groups, exact-match keywords, locations and negatives are created. Existing budget, campaign status, networks, presence targeting, group CPC and statuses are reconciled. Copy changes create or reuse an equivalent responsive search ad and pause superseded RSAs. One active RSA per managed ad group is the contract; don't manually create additional RSA variants in those groups unless you're prepared for them to be paused.
-- Extra active positive keywords and `aac:` ad groups block application by default. `plan --prune` explicitly requests pausing those extras and removing undesired managed locations or campaign negative keyword criteria. Removed location/negative criteria can be recreated later but get new IDs. No campaign deletion, group deletion, or ad deletion is implemented. Non-managed active groups, negative group keywords, negative geographic exclusions and non-RSA active ads cause blockers where observed.
-- `apply` recomputes the plan from the current account and YAML. Any difference from the reviewed file is rejected, including account, desired configuration, scoped resource state, and exact operation list. There is no server-side compare-and-swap; avoid concurrent account edits between the final read and mutation. New resources are created atomically in one `googleAds:mutate` request with negative temporary resource IDs. All requests use `partialFailure=false`.
-- The CLI validates the entire proposed request through Google before committing. It never blindly retries a mutation after a network failure; re-plan to learn what actually happened. Successful commits write a local receipt. Plan/receipt files are never overwritten.
-- Exact match does not mean literal equality on Google Ads: close variants are eligible. This tool does not manage campaign-wide broad-match settings, AI Max, account-level auto-apply, shared negative lists, schedules, keyword-specific bid overrides, asset extensions, advanced targeting, conversion goals, auto-tagging, or all account/campaign-level policy settings. Review these separately. A successful plan is a match for the **managed subset**, not a comprehensive account audit or a guarantee of zero delivery drift.
+Adstack keeps no state file. A campaign's identity is its name, `adstack:<namespace>:<campaign id>`, so every campaign in the namespace is managed and every other campaign is ignored. Each plan reads the account, compares it with the configuration, and lists every change, blocker and required permission. Applying sends one atomic request. The details, including what Adstack deliberately doesn't manage, are in [docs/how-it-works.md](docs/how-it-works.md).
 
-## Git workflow
+## Roadmap
 
-Commit the YAML, implementation and tests. Keep OAuth secrets and operational plans/receipts out of source control. Have a PR change the desired state, run offline validation and tests in CI, review a live plan separately, then execute the reviewed plan manually with account confirmation. The included GitHub Actions workflow runs offline tests only; it does not authenticate or deploy campaigns. No credentials should be exposed to untrusted PR code.
+- More providers: Microsoft Advertising, Meta, LinkedIn.
+- More Google Ads features: other bidding strategies, phrase and broad keywords in ad groups, display paths, assets, ad schedules.
+- Importing existing campaigns into configuration.
+- A JSON Schema for editor completion and validation.
 
-## Status and limitations
+Ideas and pull requests are welcome.
 
-Version 0.1 is a local MVP. The example, reconciliation, mutation ordering and safety gates are covered by offline tests. The REST payloads and GAQL queries were designed against the v26 documentation, but **have not been exercised against a Google Ads account**. Before production use, run a test-account smoke test (create paused, read back, verify a no-op plan, modify one keyword/ad, verify policy responses), then validate the production plan. No API request was made during development. The initial budget, bids, location and landing page are proposed settings, not approved by the account owner. Multi-campaign bundles, import/adoption, keyword research, conversion provisioning, a hosted MCP server and automated CI deployment are future work.
+## Contributing
 
-References: [API access](https://developers.google.com/google-ads/api/docs/api-policy/access-levels), [developer token sunset](https://developers.google.com/google-ads/api/docs/api-policy/developer-token), [Search campaign creation](https://developers.google.com/google-ads/api/docs/campaigns/search-campaigns/getting-started), [atomic mutations](https://developers.google.com/google-ads/api/docs/mutating/overview), [REST authentication](https://developers.google.com/google-ads/api/rest/auth).
+See [CONTRIBUTING.md](CONTRIBUTING.md). Please report security issues privately, as described in [SECURITY.md](SECURITY.md).
+
+## License
+
+[Apache License 2.0](LICENSE).
