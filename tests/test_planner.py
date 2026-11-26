@@ -69,6 +69,18 @@ def test_activation_and_increase_flags():
     s['campaign']['status']='ENABLED';assert reconcile(c,s,ACCOUNT)['requires']['allow_live_changes']
     with pytest.raises(PlanError):reconcile(c,empty(),ACCOUNT)
 
+def test_one_operation_per_resource():
+    # Google rejects a request that mutates the same resource twice (ID_EXISTS_IN_MULTIPLE_MUTATES).
+    c=config();s=materialized(c);group=s['groups'][0];campaign=s['campaign']
+    group['status']='PAUSED';next(g for g in c['groups'] if g['name']==group['name'])['bid']+=250_000
+    campaign['networkSettings']['targetContentNetwork']=True;campaign['geoTargetTypeSetting']['positiveGeoTargetType']='PRESENCE_OR_INTEREST';c['status']='ENABLED'
+    p=reconcile(c,s,ACCOUNT);ops=[next(iter(op.values())) for op in p['operations']]
+    assert len(p['changes'])==5 and len(ops)==2
+    updates={op['update']['resourceName']:op for op in ops}
+    assert updates[group['resourceName']]['updateMask']=='cpcBidMicros,status'
+    assert updates[campaign['resourceName']]['updateMask']=='networkSettings.targetContentNetwork,geoTargetTypeSetting.positiveGeoTargetType,status'
+    assert updates[campaign['resourceName']]['update']=={'resourceName':campaign['resourceName'],'networkSettings':{'targetContentNetwork':False},'geoTargetTypeSetting':{'positiveGeoTargetType':'PRESENCE'},'status':'ENABLED'}
+
 def test_currency_and_shared_budget_fail_closed():
     c=config();s=materialized(c);s['currency']='EUR'
     with pytest.raises(PlanError):reconcile(c,s,ACCOUNT)

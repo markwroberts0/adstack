@@ -32,12 +32,22 @@ def reconcile(config, state, account, prune=False):
         nonlocal temp
         temp -= 1
         return f'{base}/{collection}/{temp}'
+    updates = {}
     def add(kind, action, fields, description, mask=None):
         op = {action:fields}
         if mask: op['updateMask'] = ','.join(mask)
         ops.append({kind+'Operation':op}); changes.append(description)
+        return op
     def update(kind, resource, fields, description, mask=None):
-        add(kind,'update',{'resourceName':resource,**fields},description,mask or list(fields))
+        # Google rejects a request that mutates one resource twice (ID_EXISTS_IN_MULTIPLE_MUTATES),
+        # so later changes to an already-updated resource join its operation and update mask.
+        mask = mask or list(fields)
+        op = updates.get(resource)
+        if op is None:
+            updates[resource] = add(kind,'update',{'resourceName':resource,**fields},description,mask)
+            return
+        if set(fields) & set(op['update']): raise PlanError(f'Conflicting updates to {resource}')
+        op['update'].update(fields); op['updateMask'] += ','+','.join(mask); changes.append(description)
     def unique(rows, fn, description):
         result = {}
         for row in rows:
