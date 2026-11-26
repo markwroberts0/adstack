@@ -8,6 +8,7 @@ adstack destroy         pause every campaign Adstack manages
 adstack show            display a saved plan
 adstack state list      list what Adstack manages in the account
 adstack report          performance and search-term reports
+adstack mcp             run the MCP server for AI assistants
 """
 
 from __future__ import annotations
@@ -242,6 +243,20 @@ def cmd_report(args: argparse.Namespace, ui: Ui) -> int:
     return EXIT_OK
 
 
+def cmd_mcp(args: argparse.Namespace, ui: Ui) -> int:
+    try:
+        from .mcp_server import serve
+    except ModuleNotFoundError as exc:
+        if exc.name and exc.name.split(".")[0] == "mcp":
+            raise AdstackError(
+                f"the MCP server needs the 'mcp' package: install Adstack with the [mcp] extra (see {DOCS_URL}#install)"
+            ) from None
+        raise
+    allow_apply = args.allow_apply or _env_flag("ADSTACK_MCP_ALLOW_APPLY")
+    serve(root=Path(args.root).resolve(), sandbox=args.sandbox, allow_apply=allow_apply)
+    return EXIT_OK
+
+
 def cmd_version(args: argparse.Namespace, ui: Ui) -> int:
     ui.out(f"adstack {__version__}")
     return EXIT_OK
@@ -436,6 +451,21 @@ def build_parser() -> argparse.ArgumentParser:
     )
     p.add_argument("--json", action="store_true", help="print rows as JSON")
     p.set_defaults(handler=cmd_report)
+
+    p = commands.add_parser(
+        "mcp",
+        parents=[account],
+        help="run the MCP server (stdio) for AI assistants",
+        description="Serve Adstack's tools over the Model Context Protocol (stdio). Applying changes is disabled "
+        "unless --allow-apply is set or the server uses the sandbox.",
+    )
+    p.add_argument("--root", default=".", help="directory the tools may read configurations from (default: .)")
+    p.add_argument(
+        "--allow-apply",
+        action="store_true",
+        help="expose the apply tool for the real ad platform; or set ADSTACK_MCP_ALLOW_APPLY=1",
+    )
+    p.set_defaults(handler=cmd_mcp)
 
     p = commands.add_parser("version", help="print the Adstack version")
     p.set_defaults(handler=cmd_version)
