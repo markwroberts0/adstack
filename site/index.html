@@ -1,0 +1,997 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Adstack · Advertising campaigns as code</title>
+<meta name="description" content="Declare ad campaigns in YAML, review a plan of exactly what will change, then apply it. The Terraform workflow, built for ad platforms, with an MCP server for AI assistants. Open source, Apache-2.0.">
+<meta name="theme-color" content="#f6f5f1" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#0d0d0f" media="(prefers-color-scheme: dark)">
+<link rel="icon" href="favicon.svg" type="image/svg+xml">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Adstack: advertising campaigns as code">
+<meta property="og:description" content="Declare campaigns in YAML. Review the plan. Apply it safely. Open source, with an MCP server for AI assistants.">
+<meta property="og:url" content="https://markwroberts0.github.io/adstack/">
+<meta property="og:image" content="https://markwroberts0.github.io/adstack/og.png">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:ital,wght@0,400;0,500;0,600;1,400&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<script>
+  // Apply a saved theme before first paint to avoid a flash.
+  try { var t = localStorage.getItem("adstack-theme"); if (t === "light" || t === "dark") document.documentElement.dataset.theme = t; } catch (e) {}
+</script>
+<style>
+:root {
+  --bg: #f6f5f1;
+  --bg-raised: #fbfaf7;
+  --surface: #efede7;
+  --ink: #16161a;
+  --ink-2: #3a3a42;
+  --muted: #6a6a72;
+  --line: #e2dfd6;
+  --line-strong: #cfcbbf;
+  --accent: #e8461f;
+  --accent-ink: #b8340f;
+  --accent-soft: rgba(232, 70, 31, .09);
+  --grid: rgba(22, 22, 26, .055);
+  --code-bg: #fbfaf7;
+  --hl: rgba(232, 70, 31, .12);
+  --hl-edge: #e8461f;
+  --add: #1a7f37;
+  --chg: #9a6700;
+  --del: #cf222e;
+  --syn-key: #2347a8;
+  --syn-str: #9c3d0c;
+  --syn-num: #7135c4;
+  --syn-com: #8b887e;
+  --shadow: 0 1px 0 rgba(22,22,26,.04), 0 24px 60px -24px rgba(22,22,26,.28);
+  --sans: "IBM Plex Sans", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+  --radius: 10px;
+  --wrap: 1160px;
+  color-scheme: light;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0d0d0f; --bg-raised: #131316; --surface: #18181c; --ink: #ecebe6; --ink-2: #c9c8c2; --muted: #8e8d96;
+    --line: #232328; --line-strong: #34343b; --accent: #ff5a36; --accent-ink: #ff7a5c; --accent-soft: rgba(255, 90, 54, .1);
+    --grid: rgba(236, 235, 230, .045); --code-bg: #121215; --hl: rgba(255, 90, 54, .14); --hl-edge: #ff5a36;
+    --add: #4fd17a; --chg: #f0b54a; --del: #ff7b72; --syn-key: #8fb3ff; --syn-str: #f2b58a; --syn-num: #c9a8ff; --syn-com: #6c6b73;
+    --shadow: 0 1px 0 rgba(0,0,0,.3), 0 30px 70px -30px rgba(0,0,0,.8);
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0d0d0f; --bg-raised: #131316; --surface: #18181c; --ink: #ecebe6; --ink-2: #c9c8c2; --muted: #8e8d96;
+  --line: #232328; --line-strong: #34343b; --accent: #ff5a36; --accent-ink: #ff7a5c; --accent-soft: rgba(255, 90, 54, .1);
+  --grid: rgba(236, 235, 230, .045); --code-bg: #121215; --hl: rgba(255, 90, 54, .14); --hl-edge: #ff5a36;
+  --add: #4fd17a; --chg: #f0b54a; --del: #ff7b72; --syn-key: #8fb3ff; --syn-str: #f2b58a; --syn-num: #c9a8ff; --syn-com: #6c6b73;
+  --shadow: 0 1px 0 rgba(0,0,0,.3), 0 30px 70px -30px rgba(0,0,0,.8);
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; scroll-behavior: smooth; scroll-padding-top: 76px; }
+@media (prefers-reduced-motion: reduce) { html { scroll-behavior: auto; } }
+body {
+  margin: 0; background: var(--bg); color: var(--ink);
+  font: 400 16px/1.6 var(--sans); -webkit-font-smoothing: antialiased; text-rendering: optimizeLegibility;
+  overflow-x: hidden;
+}
+a { color: inherit; text-decoration-color: var(--line-strong); text-underline-offset: 3px; }
+a:hover { text-decoration-color: currentColor; }
+code, kbd, pre { font-family: var(--mono); }
+p code, li code, td code, .inline-code {
+  font-size: .88em; padding: .1em .35em; border-radius: 5px; background: var(--surface); border: 1px solid var(--line);
+  white-space: nowrap;
+}
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+.wrap { max-width: var(--wrap); margin: 0 auto; padding: 0 24px; }
+@media (max-width: 640px) { .wrap { padding: 0 16px; } }
+.sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+
+/* ---------- nav ---------- */
+.nav {
+  position: sticky; top: 0; z-index: 50;
+  background: color-mix(in srgb, var(--bg) 82%, transparent);
+  backdrop-filter: saturate(1.4) blur(12px); -webkit-backdrop-filter: saturate(1.4) blur(12px);
+  border-bottom: 1px solid transparent; transition: border-color .2s;
+}
+.nav.scrolled { border-bottom-color: var(--line); }
+.nav .wrap { display: flex; align-items: center; gap: 28px; height: 60px; }
+.brand { display: inline-flex; align-items: center; gap: 10px; text-decoration: none; font: 600 17px/1 var(--mono); letter-spacing: -.02em; }
+.brand svg { width: 24px; height: 24px; flex: none; }
+.brand .ver { font: 500 11px/1 var(--mono); color: var(--muted); border: 1px solid var(--line); border-radius: 999px; padding: 4px 7px; letter-spacing: 0; }
+.nav-links { display: flex; gap: 22px; margin-left: auto; font-size: 14px; }
+.nav-links a { text-decoration: none; color: var(--ink-2); }
+.nav-links a:hover { color: var(--ink); }
+.nav-tools { display: flex; align-items: center; gap: 8px; }
+.icon-btn {
+  display: inline-grid; place-items: center; width: 34px; height: 34px; border-radius: 8px;
+  border: 1px solid var(--line); background: var(--bg-raised); color: var(--ink-2); cursor: pointer; padding: 0;
+}
+.icon-btn:hover { color: var(--ink); border-color: var(--line-strong); }
+.icon-btn svg { width: 17px; height: 17px; }
+.gh-btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 34px; padding: 0 12px; border-radius: 8px;
+  background: var(--ink); color: var(--bg); text-decoration: none; font: 500 13px/1 var(--sans);
+}
+.gh-btn svg { width: 16px; height: 16px; }
+.gh-btn .stars { font-family: var(--mono); font-size: 12px; opacity: .75; padding-left: 8px; border-left: 1px solid color-mix(in srgb, var(--bg) 30%, transparent); }
+.gh-btn .stars:empty { display: none; }
+@media (max-width: 860px) { .nav-links a:not(.keep) { display: none; } }
+@media (max-width: 520px) { .gh-btn .label { display: none; } .nav-links { gap: 14px; } .brand .ver { display: none; } }
+
+/* ---------- hero ---------- */
+.hero { position: relative; padding: 76px 0 40px; isolation: isolate; }
+.hero::before {
+  content: ""; position: absolute; inset: -60px 0 0; z-index: -1;
+  background-image: linear-gradient(var(--grid) 1px, transparent 1px), linear-gradient(90deg, var(--grid) 1px, transparent 1px);
+  background-size: 36px 36px; background-position: center top;
+  -webkit-mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 35%, transparent 80%);
+          mask-image: radial-gradient(ellipse 70% 60% at 50% 0%, #000 35%, transparent 80%);
+}
+.pill {
+  display: inline-flex; align-items: center; gap: 10px; font: 500 12.5px/1 var(--mono); color: var(--ink-2);
+  border: 1px solid var(--line); background: var(--bg-raised); border-radius: 999px; padding: 6px 12px 6px 6px; text-decoration: none;
+}
+.pill b { font-weight: 600; color: var(--accent-ink); background: var(--accent-soft); border-radius: 999px; padding: 4px 8px; }
+.pill:hover { border-color: var(--line-strong); }
+@media (max-width: 520px) { .pill .long { display: none; } }
+h1 {
+  font: 600 clamp(2.55rem, 6.4vw, 4.9rem)/1.02 var(--sans); letter-spacing: -.035em; margin: 22px 0 0; max-width: 13em;
+}
+h1 .mono { font-family: var(--mono); font-weight: 500; letter-spacing: -.06em; word-spacing: -.3em; color: var(--accent); }
+.h1-caret { display: inline-block; width: .38em; height: .74em; margin-left: .1em; vertical-align: -.02em; background: var(--accent); opacity: .9; animation: blink 1.05s steps(1) infinite; }
+.lede { font-size: clamp(1.05rem, 1.6vw, 1.25rem); line-height: 1.55; color: var(--ink-2); max-width: 60ch; margin: 22px 0 0; }
+.hero-actions { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; margin-top: 32px; }
+.btn {
+  display: inline-flex; align-items: center; gap: 8px; height: 44px; padding: 0 18px; border-radius: 9px;
+  font: 500 15px/1 var(--sans); text-decoration: none; border: 1px solid var(--line-strong); color: var(--ink); background: var(--bg-raised);
+}
+.btn:hover { border-color: var(--ink); }
+.btn.primary { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.btn.primary:hover { background: color-mix(in srgb, var(--ink) 88%, var(--accent)); }
+.btn svg { width: 16px; height: 16px; }
+
+.install {
+  display: flex; align-items: stretch; max-width: 100%; border: 1px solid var(--line-strong); border-radius: 9px; background: var(--code-bg);
+  font: 400 13.5px/1 var(--mono); overflow: hidden; min-width: 0;
+}
+.install code { display: flex; align-items: center; gap: 10px; padding: 0 4px 0 14px; white-space: nowrap; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.install code::-webkit-scrollbar { display: none; }
+.install .ps { color: var(--muted); user-select: none; }
+.copy {
+  flex: none; display: inline-grid; place-items: center; width: 42px; border: 0; border-left: 1px solid var(--line);
+  background: transparent; color: var(--muted); cursor: pointer;
+}
+.copy:hover { color: var(--ink); background: var(--surface); }
+.copy svg { width: 15px; height: 15px; }
+.copy.done { color: var(--add); }
+.hero-actions .install { height: 44px; flex: 1 1 420px; max-width: 640px; }
+
+.alpha-note {
+  display: flex; gap: 10px; align-items: flex-start; margin-top: 22px; font-size: 13.5px; color: var(--muted); max-width: 72ch;
+}
+.alpha-note svg { flex: none; width: 16px; height: 16px; margin-top: 3px; color: var(--chg); }
+
+/* ---------- terminal ---------- */
+.term {
+  --t-bg: #0f1013; --t-bar: #16171b; --t-line: #26272d; --t-ink: #e4e3dd; --t-dim: #7d7c85; --t-faint: #55545c;
+  --add: #4fd17a; --chg: #f0b54a; --del: #ff7b72; --accent: #ff5a36;
+  margin-top: 56px; border-radius: 12px; background: var(--t-bg); color: var(--t-ink); border: 1px solid #000;
+  box-shadow: var(--shadow), inset 0 0 0 1px rgba(255,255,255,.05); overflow: hidden; color-scheme: dark;
+}
+.term-bar { display: flex; align-items: center; gap: 14px; height: 44px; padding: 0 8px 0 16px; background: var(--t-bar); border-bottom: 1px solid var(--t-line); }
+.dots { display: flex; gap: 7px; flex: none; }
+.dots i { width: 11px; height: 11px; border-radius: 50%; background: #2e2f35; }
+.term-tabs { display: flex; gap: 2px; overflow-x: auto; scrollbar-width: none; min-width: 0; }
+.term-tabs::-webkit-scrollbar { display: none; }
+.term-tab {
+  font: 500 12.5px/1 var(--mono); color: var(--t-dim); background: transparent; border: 0; padding: 8px 11px; border-radius: 6px; cursor: pointer; white-space: nowrap;
+}
+.term-tab .n { color: var(--t-faint); margin-right: 6px; }
+.term-tab:hover { color: var(--t-ink); }
+.term-tab[aria-selected="true"] { color: var(--t-ink); background: #24252b; }
+.term-tab[aria-selected="true"] .n { color: var(--accent); }
+.term-meta { margin-left: auto; display: flex; align-items: center; gap: 4px; flex: none; }
+.term-meta span { font: 400 12px/1 var(--mono); color: var(--t-faint); margin-right: 6px; }
+.term-meta button { width: 30px; height: 30px; border-radius: 6px; border: 0; background: transparent; color: var(--t-dim); cursor: pointer; display: grid; place-items: center; }
+.term-meta button:hover { color: var(--t-ink); background: #24252b; }
+.term-meta svg { width: 15px; height: 15px; }
+@media (max-width: 720px) { .term-meta span, .dots { display: none; } }
+.term-body {
+  margin: 0; padding: 20px 22px 26px; height: 520px; overflow: auto; font: 400 13px/1.62 var(--mono); white-space: pre;
+  scrollbar-color: #2e2f35 transparent; tab-size: 4;
+}
+@media (max-width: 640px) { .term-body { height: 440px; font-size: 12px; padding: 16px; } }
+.term-body .ln { min-height: 1.62em; }
+.term-body .cmd { color: #fff; }
+.term-body .ps { color: var(--accent); user-select: none; }
+.caret { display: inline-block; width: .6em; height: 1.15em; vertical-align: -.2em; background: var(--t-ink); margin-left: 1px; animation: blink 1.05s steps(1) infinite; }
+@keyframes blink { 50% { opacity: 0; } }
+.term-foot { display: flex; justify-content: space-between; gap: 16px; padding: 10px 16px; border-top: 1px solid var(--t-line); font: 400 12px/1.4 var(--mono); color: var(--t-dim); background: var(--t-bar); }
+.term-foot .cap { color: var(--t-ink); }
+@media (max-width: 640px) { .term-foot .src { display: none; } }
+
+/* output coloring (shared by terminal and static panels) */
+.a { color: var(--add); } .c { color: var(--chg); } .d { color: var(--del); }
+.b { font-weight: 600; } .dim { color: var(--t-dim, var(--muted)); } .el { color: var(--t-faint, var(--muted)); font-style: italic; }
+.attr { color: var(--t-dim, var(--muted)); }
+.flag { color: var(--chg); }
+
+/* ---------- sections ---------- */
+section { padding: 110px 0 0; }
+@media (max-width: 640px) { section { padding-top: 80px; } }
+.eyebrow { display: flex; align-items: center; gap: 10px; font: 500 12.5px/1 var(--mono); color: var(--muted); text-transform: lowercase; margin: 0 0 18px; }
+.eyebrow .num { color: var(--accent); }
+.eyebrow::after { content: ""; flex: 1; height: 1px; background: var(--line); max-width: 120px; }
+h2 { font: 600 clamp(1.8rem, 3.4vw, 2.6rem)/1.1 var(--sans); letter-spacing: -.028em; margin: 0; max-width: 22ch; }
+h3 { font: 600 17px/1.3 var(--sans); letter-spacing: -.01em; margin: 0; }
+.sub { color: var(--ink-2); font-size: 1.075rem; max-width: 62ch; margin: 18px 0 0; }
+.sec-head { margin-bottom: 44px; }
+
+/* pipeline */
+.pipeline { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(5, 1fr); border: 1px solid var(--line); border-radius: var(--radius); background: var(--bg-raised); overflow: hidden; }
+.pipeline li { position: relative; padding: 22px 20px 24px; border-left: 1px solid var(--line); }
+.pipeline li:first-child { border-left: 0; }
+.pipeline .step { font: 500 12px/1 var(--mono); color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.pipeline .step i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.pipeline li:nth-child(4) .step i { background: var(--chg); }
+.pipeline li:last-child .step i { background: var(--add); }
+.pipeline h3 { margin: 14px 0 8px; font-family: var(--mono); font-weight: 600; font-size: 16px; }
+.pipeline p { margin: 0; font-size: 14.5px; color: var(--ink-2); line-height: 1.55; }
+.pipeline li:not(:last-child)::after {
+  content: ""; position: absolute; right: -6px; top: 26px; width: 11px; height: 11px; z-index: 1;
+  background: var(--bg-raised); border-top: 1px solid var(--line); border-right: 1px solid var(--line); transform: rotate(45deg);
+}
+@media (max-width: 960px) {
+  .pipeline { grid-template-columns: 1fr; }
+  .pipeline li { border-left: 0; border-top: 1px solid var(--line); padding-left: 52px; }
+  .pipeline li:first-child { border-top: 0; }
+  .pipeline .step { position: absolute; left: 20px; top: 25px; }
+  .pipeline .step span { display: none; }
+  .pipeline h3 { margin-top: 0; }
+  .pipeline li:not(:last-child)::after { display: none; }
+}
+
+/* linked config <-> plan */
+.linked { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 18px; margin-top: 28px; align-items: start; }
+.linked .panel:last-child { position: sticky; top: 76px; }
+@media (max-width: 960px) { .linked { grid-template-columns: minmax(0, 1fr); } .linked .panel:last-child { position: static; } }
+.panel { border: 1px solid var(--line); border-radius: var(--radius); background: var(--code-bg); overflow: hidden; display: flex; flex-direction: column; min-width: 0; }
+.panel-bar { display: flex; align-items: center; gap: 10px; height: 42px; padding: 0 14px; white-space: nowrap; overflow: hidden; border-bottom: 1px solid var(--line); font: 500 12.5px/1 var(--mono); color: var(--muted); background: var(--bg-raised); }
+.panel-bar svg { width: 14px; height: 14px; }
+.panel-bar .right { margin-left: auto; }
+@media (max-width: 640px) { .panel-bar .right:not(:has(.copy)) { display: none; } }
+.code { margin: 0; padding: 16px 0; font: 400 12.8px/1.7 var(--mono); overflow-x: auto; white-space: pre; color: var(--ink); flex: 1; }
+.code > span { display: block; min-width: 100%; width: max-content; padding: 0 18px 0 16px; border-left: 2px solid transparent; }
+.code .k { color: var(--syn-key); } .code .s { color: var(--syn-str); } .code .n { color: var(--syn-num); } .code .cm { color: var(--syn-com); }
+.code .p { color: var(--muted); }
+.linked [data-k] { cursor: default; transition: background-color .12s, border-color .12s, opacity .12s; }
+.linked.active [data-k] { opacity: .45; }
+.linked.active [data-k].hl { opacity: 1; background: var(--hl); border-left-color: var(--hl-edge); }
+.hint { font: 400 12.5px/1.4 var(--mono); color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.hint kbd { font: inherit; border: 1px solid var(--line-strong); border-bottom-width: 2px; border-radius: 4px; padding: 0 5px; }
+
+/* guardrails */
+.cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+@media (max-width: 960px) { .cards { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 640px) { .cards { grid-template-columns: minmax(0, 1fr); } }
+.card { background: var(--bg-raised); padding: 26px 24px 28px; }
+.card .ico { width: 34px; height: 34px; border-radius: 8px; display: grid; place-items: center; background: var(--surface); border: 1px solid var(--line); color: var(--ink-2); margin-bottom: 18px; }
+.card .ico svg { width: 17px; height: 17px; }
+.card p { margin: 8px 0 0; color: var(--ink-2); font-size: 14.75px; line-height: 1.6; }
+
+.split { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 56px; align-items: start; }
+.split.wide-r { grid-template-columns: minmax(0, .8fr) minmax(0, 1.2fr); }
+@media (max-width: 960px) { .split, .split.wide-r { grid-template-columns: minmax(0, 1fr); gap: 36px; } }
+
+.flags { width: 100%; border-collapse: collapse; font-size: 14.5px; }
+.flags th { text-align: left; font: 500 12px/1 var(--mono); color: var(--muted); padding: 0 0 12px; border-bottom: 1px solid var(--line-strong); }
+.flags td { padding: 14px 0; border-bottom: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+.flags td:first-child { padding-right: 20px; white-space: nowrap; }
+.flags td:first-child code { font-size: 13px; color: var(--chg); background: transparent; border: 0; padding: 0; }
+.never { list-style: none; margin: 28px 0 0; padding: 0; display: grid; gap: 10px; }
+.never li { display: grid; grid-template-columns: 12px 1fr; gap: 12px; align-items: baseline; font-size: 15px; color: var(--ink-2); }
+.never li::before { content: "×"; font: 600 15px/1 var(--mono); color: var(--del); }
+
+/* code blocks with header */
+.block { border: 1px solid var(--line); border-radius: var(--radius); background: var(--code-bg); overflow: hidden; min-width: 0; }
+.block + .block { margin-top: 16px; }
+.block .code { padding: 16px 0 18px; }
+.block .panel-bar .copy { width: 30px; height: 30px; border: 0; border-radius: 6px; margin-right: -8px; }
+.block .code .ps { color: var(--accent); user-select: none; }
+
+/* MCP tools table */
+.tools { width: 100%; border-collapse: collapse; font-size: 14px; }
+.tools td { padding: 11px 16px; border-top: 1px solid var(--line); vertical-align: top; color: var(--ink-2); }
+.tools tr:first-child td { border-top: 0; }
+.tools td:first-child { font: 500 13px/1.6 var(--mono); color: var(--ink); white-space: nowrap; width: 1%; }
+.tag { display: inline-block; font: 500 11px/1 var(--mono); padding: 4px 7px; border-radius: 5px; white-space: nowrap; }
+.tag.ro { color: var(--add); background: color-mix(in srgb, var(--add) 11%, transparent); }
+.tag.rw { color: var(--del); background: color-mix(in srgb, var(--del) 11%, transparent); }
+.safeguards { counter-reset: s; list-style: none; padding: 0; margin: 26px 0 0; display: grid; gap: 16px; }
+.safeguards li { counter-increment: s; display: grid; grid-template-columns: 30px 1fr; gap: 6px; font-size: 15px; color: var(--ink-2); }
+.safeguards li::before { content: counter(s, decimal-leading-zero); font: 500 12.5px/1.75 var(--mono); color: var(--accent); }
+.safeguards strong { color: var(--ink); font-weight: 600; }
+
+/* identity */
+.identity {
+  margin-top: 8px; padding: 30px 28px; border: 1px dashed var(--line-strong); border-radius: var(--radius);
+  font: 500 clamp(1.05rem, 2.6vw, 1.6rem)/1.3 var(--mono); letter-spacing: -.02em; overflow-x: auto; white-space: nowrap;
+}
+.identity .lit { color: var(--muted); }
+.identity .var { color: var(--accent); }
+.identity small { display: block; margin-top: 12px; font: 400 13px/1.5 var(--sans); letter-spacing: 0; color: var(--muted); white-space: normal; }
+
+/* roadmap */
+.road { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 12px; }
+@media (max-width: 960px) { .road { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+.prov { border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; background: var(--bg-raised); }
+.prov.wanted { border-style: dashed; background: transparent; }
+.prov .st { font: 500 11.5px/1 var(--mono); display: inline-flex; align-items: center; gap: 6px; color: var(--muted); }
+.prov .st i { width: 7px; height: 7px; border-radius: 50%; background: var(--line-strong); }
+.prov.live .st { color: var(--add); }
+.prov.live .st i { background: var(--add); box-shadow: 0 0 0 3px color-mix(in srgb, var(--add) 20%, transparent); }
+.prov h3 { margin-top: 12px; font-size: 16px; }
+.prov p { margin: 6px 0 0; font-size: 13.5px; color: var(--muted); line-height: 1.5; }
+.checklist { list-style: none; margin: 0; padding: 0; display: grid; gap: 9px; }
+.checklist li { display: flex; gap: 12px; font-size: 15px; color: var(--ink-2); align-items: baseline; }
+.checklist li::before { content: "[ ]"; font: 500 12.5px/1 var(--mono); color: var(--muted); flex: none; }
+
+/* CTA + footer */
+.cta {
+  margin-top: 120px; border-radius: 14px; padding: 56px 40px; position: relative; overflow: hidden; isolation: isolate;
+  background: var(--ink); color: var(--bg);
+}
+.cta::before {
+  content: ""; position: absolute; inset: 0; z-index: -1; opacity: .5;
+  background-image: linear-gradient(color-mix(in srgb, var(--bg) 9%, transparent) 1px, transparent 1px), linear-gradient(90deg, color-mix(in srgb, var(--bg) 9%, transparent) 1px, transparent 1px);
+  background-size: 36px 36px;
+  -webkit-mask-image: radial-gradient(ellipse 60% 90% at 100% 50%, #000, transparent 75%); mask-image: radial-gradient(ellipse 60% 90% at 100% 50%, #000, transparent 75%);
+}
+.cta h2 { color: var(--bg); max-width: 20ch; }
+.cta p { color: color-mix(in srgb, var(--bg) 72%, var(--ink)); max-width: 56ch; margin: 16px 0 28px; }
+.cta .btn { border-color: color-mix(in srgb, var(--bg) 25%, transparent); background: transparent; color: var(--bg); }
+.cta .btn:hover { border-color: var(--bg); }
+.cta .btn.primary { background: var(--bg); color: var(--ink); border-color: var(--bg); }
+@media (max-width: 640px) { .cta { padding: 40px 22px; } }
+footer { margin-top: 80px; border-top: 1px solid var(--line); padding: 44px 0 56px; font-size: 14px; color: var(--muted); }
+.foot { display: grid; grid-template-columns: 1.4fr repeat(3, 1fr); gap: 32px; }
+@media (max-width: 760px) { .foot { grid-template-columns: 1fr 1fr; } .foot > :first-child { grid-column: 1 / -1; } }
+.foot h4 { font: 500 12px/1 var(--mono); color: var(--ink); margin: 4px 0 14px; }
+.foot ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.foot a { text-decoration: none; color: var(--muted); }
+.foot a:hover { color: var(--ink); }
+.fine { margin-top: 40px; padding-top: 22px; border-top: 1px solid var(--line); font-size: 12.5px; line-height: 1.6; display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; }
+.fine span:last-child { max-width: 70ch; }
+
+.reveal { opacity: 0; transform: translateY(10px); transition: opacity .6s ease, transform .6s ease; }
+.reveal.in { opacity: 1; transform: none; }
+@media (prefers-reduced-motion: reduce) { .reveal { opacity: 1; transform: none; transition: none; } .caret, .h1-caret { animation: none; } }
+:root[data-theme="dark"] .term { border-color: var(--line-strong); }
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) .term { border-color: var(--line-strong); } }
+</style>
+</head>
+<body>
+
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-gh" viewBox="0 0 16 16"><path fill="currentColor" d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.013 8.013 0 0016 8c0-4.42-3.58-8-8-8z"/></symbol>
+    <symbol id="i-copy" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="12" height="12" rx="2"/><path d="M5 15V5a2 2 0 0 1 2-2h10"/></g></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" d="M4 12.5l5 5L20 6.5"/></symbol>
+    <symbol id="i-file" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8z"/><path d="M14 3v5h5"/></g></symbol>
+    <symbol id="i-term" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 8l4 4-4 4"/><path d="M12 17h7"/></g></symbol>
+    <symbol id="i-arrow" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M5 12h14M13 6l6 6-6 6"/></symbol>
+    <symbol id="i-warn" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l10 18H2z"/><path d="M12 10v5M12 18h.01"/></g></symbol>
+    <symbol id="i-replay" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></g></symbol>
+    <symbol id="i-skip" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 5l9 7-9 7z"/><path d="M19 5v14"/></g></symbol>
+    <symbol id="i-sun" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2M12 20v2M4.9 4.9l1.4 1.4M17.7 17.7l1.4 1.4M2 12h2M20 12h2M4.9 19.1l1.4-1.4M17.7 6.3l1.4-1.4"/></g></symbol>
+    <symbol id="i-moon" viewBox="0 0 24 24"><path fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" d="M21 12.8A9 9 0 1 1 11.2 3a7 7 0 0 0 9.8 9.8z"/></symbol>
+    <symbol id="logo" viewBox="0 0 24 24"><rect x="2" y="3.5" width="13" height="4.2" rx="1" fill="var(--accent)"/><rect x="5.5" y="9.9" width="13" height="4.2" rx="1" fill="currentColor"/><rect x="9" y="16.3" width="13" height="4.2" rx="1" fill="currentColor" opacity=".5"/></symbol>
+  </defs>
+</svg>
+
+<header class="nav" id="nav">
+  <div class="wrap">
+    <a class="brand" href="#top" aria-label="Adstack home"><svg aria-hidden="true"><use href="#logo"/></svg>adstack<span class="ver">v0.2.0</span></a>
+    <nav class="nav-links" aria-label="Primary">
+      <a href="#how">How it works</a>
+      <a href="#guardrails">Guardrails</a>
+      <a href="#mcp">MCP</a>
+      <a href="#contribute">Contribute</a>
+      <a class="keep" href="https://github.com/markwroberts0/adstack/tree/main/docs">Docs</a>
+    </nav>
+    <div class="nav-tools">
+      <button class="icon-btn" id="theme" type="button" aria-label="Toggle color theme" title="Toggle color theme">
+        <svg class="sun" aria-hidden="true"><use href="#i-sun"/></svg>
+      </button>
+      <a class="gh-btn" href="https://github.com/markwroberts0/adstack" aria-label="Adstack on GitHub">
+        <svg aria-hidden="true"><use href="#i-gh"/></svg><span class="label">GitHub</span><span class="stars" id="stars"></span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<main id="top">
+
+<!-- ================= HERO ================= -->
+<div class="hero">
+  <div class="wrap">
+    <a class="pill" href="https://github.com/markwroberts0/adstack/blob/main/CHANGELOG.md"><b>v0.2.0</b> <span class="long">Terraform-style CLI and an </span>MCP server <svg width="12" height="12" aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    <h1>Advertising campaigns<br><span class="mono">as code</span><span class="h1-caret" aria-hidden="true"></span></h1>
+    <p class="lede">Declare campaigns in YAML. Review a plan of exactly what will change. Apply it in one atomic, validated request. The workflow you already trust for infrastructure, built for ad platforms, open source under Apache-2.0.</p>
+    <div class="hero-actions">
+      <div class="install" role="group" aria-label="Install command">
+        <code><span class="ps" aria-hidden="true">$</span><span data-copy-src>pip install "adstack[mcp] @ git+https://github.com/markwroberts0/adstack"</span></code>
+        <button class="copy" type="button" aria-label="Copy install command" data-copy><svg aria-hidden="true"><use href="#i-copy"/></svg></button>
+      </div>
+      <a class="btn primary" href="#quickstart">Quick start <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+    </div>
+    <p class="alpha-note"><svg aria-hidden="true"><use href="#i-warn"/></svg><span><strong>Alpha.</strong> Google Ads Search campaigns are supported today. Plan and apply are tested end to end against the offline sandbox, but the REST integration hasn't been exercised against a live account yet: start with a Google Ads test account.</span></p>
+
+    <div class="term" id="term">
+      <div class="term-bar">
+        <div class="dots" aria-hidden="true"><i></i><i></i><i></i></div>
+        <div class="term-tabs" role="tablist" aria-label="Demo scenes" id="term-tabs"></div>
+        <div class="term-meta">
+          <span>sandbox · no credentials</span>
+          <button type="button" id="term-skip" aria-label="Show the whole scene now" title="Show the whole scene now"><svg aria-hidden="true"><use href="#i-skip"/></svg></button>
+          <button type="button" id="term-replay" aria-label="Replay the demo" title="Replay"><svg aria-hidden="true"><use href="#i-replay"/></svg></button>
+        </div>
+      </div>
+      <pre class="term-body" id="term-body" role="tabpanel" aria-live="off" tabindex="0"><noscript><span class="ps">$</span> adstack init my-ads
+<span class="ps">$</span> adstack plan my-ads --sandbox --out launch.plan.json
+<span class="ps">$</span> adstack apply launch.plan.json</noscript></pre>
+      <div class="term-foot"><span class="cap" id="term-cap">Real output from adstack 0.2.0 against the local sandbox account.</span><span class="src">examples/quickstart</span></div>
+    </div>
+  </div>
+</div>
+
+<!-- ================= HOW ================= -->
+<section id="how">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow"><span class="num">01</span> how it works</p>
+      <h2>Plan, review, apply. Nothing in between.</h2>
+      <p class="sub">Adstack is a reconciler. Your configuration describes the campaigns you want; every plan reads the account, compares the two, and lists the operations that make them match. Changes made by hand show up in the next plan.</p>
+    </div>
+    <ol class="pipeline reveal">
+      <li><div class="step"><i></i><span>step 1</span></div><h3>declare</h3><p>Campaigns, ad groups, keywords and ads in YAML. One file or a directory of them, reviewed in git.</p></li>
+      <li><div class="step"><i></i><span>step 2</span></div><h3>validate</h3><p>Strict, offline checks. Unknown keys, bad match types and typo'd budgets fail with the exact location.</p></li>
+      <li><div class="step"><i></i><span>step 3</span></div><h3>plan</h3><p>Reads the account and computes a pure, deterministic diff. Changes nothing. Save it with <code>--out</code>.</p></li>
+      <li><div class="step"><i></i><span>step 4</span></div><h3>review</h3><p>Read every add, change and removal, plus the permissions applying it will need.</p></li>
+      <li><div class="step"><i></i><span>step 5</span></div><h3>apply</h3><p>Re-verified against the live account, validated by the platform, then sent as one atomic request.</p></li>
+    </ol>
+
+    <div class="linked reveal" id="linked">
+      <div class="panel">
+        <div class="panel-bar"><svg aria-hidden="true"><use href="#i-file"/></svg>examples/quickstart/adstack.yaml<span class="right hint">hover a line</span></div>
+<pre class="code"><span data-k="acct"><span class="k">version</span><span class="p">:</span> <span class="n">1</span></span><span> </span><span data-k="acct"><span class="k">provider</span><span class="p">:</span></span><span data-k="acct">  <span class="k">google_ads</span><span class="p">:</span></span><span data-k="acct camp">    <span class="k">namespace</span><span class="p">:</span> example</span><span data-k="acct budget cpc-road cpc-trail">    <span class="k">currency</span><span class="p">:</span> USD</span><span> </span><span data-k="rsa"><span class="k">ad_templates</span><span class="p">:</span></span><span data-k="rsa">  <span class="k">running-shoes</span><span class="p">:</span></span><span data-k="rsa">    <span class="k">final_url</span><span class="p">:</span> <span class="s">https://www.example.com/running-shoes</span></span><span data-k="rsa">    <span class="k">headlines</span><span class="p">:</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Running Shoes For Every Pace</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Road, Trail And Track Shoes</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Free Returns On All Shoes</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Find Your Perfect Fit</span></span><span data-k="rsa">    <span class="k">descriptions</span><span class="p">:</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Road, trail and track shoes from leading brands. Free shipping on orders over $50.</span></span><span data-k="rsa">      <span class="p">-</span> <span class="s">Not the right fit? Return any pair within 60 days for a full refund.</span></span><span> </span><span><span class="k">campaigns</span><span class="p">:</span></span><span data-k="camp">  <span class="p">-</span> <span class="k">id</span><span class="p">:</span> running-shoes</span><span data-k="camp">    <span class="k">status</span><span class="p">:</span> PAUSED</span><span data-k="budget">    <span class="k">daily_budget</span><span class="p">:</span> <span class="n">25.00</span></span><span data-k="cpc-road">    <span class="k">default_cpc</span><span class="p">:</span> <span class="n">1.10</span></span><span data-k="loc">    <span class="k">locations</span><span class="p">:</span> [<span class="n">2840</span>]                 <span class="cm"># United States</span></span><span data-k="neg">    <span class="k">negative_keywords</span><span class="p">:</span> [<span class="s">'"free"'</span>, <span class="s">'"jobs"'</span>, <span class="s">'"repair"'</span>]</span><span data-k="road">    <span class="k">ad_groups</span><span class="p">:</span></span><span data-k="road">      <span class="p">-</span> <span class="k">id</span><span class="p">:</span> road</span><span data-k="rsa-road">        <span class="k">ad_template</span><span class="p">:</span> running-shoes</span><span data-k="kw1 kw2 kw3">        <span class="k">keywords</span><span class="p">:</span></span><span data-k="kw1">          <span class="p">-</span> <span class="s">'[road running shoes]'</span></span><span data-k="kw2">          <span class="p">-</span> <span class="s">'[running shoes for men]'</span></span><span data-k="kw3">          <span class="p">-</span> <span class="s">'[running shoes for women]'</span></span><span data-k="trail">      <span class="p">-</span> <span class="k">id</span><span class="p">:</span> trail</span><span data-k="rsa-trail">        <span class="k">ad_template</span><span class="p">:</span> running-shoes</span><span data-k="cpc-trail">        <span class="k">cpc</span><span class="p">:</span> <span class="n">1.35</span>                     <span class="cm"># overrides default_cpc</span></span><span data-k="kw4 kw5">        <span class="k">keywords</span><span class="p">:</span></span><span data-k="kw4">          <span class="p">-</span> <span class="s">'[trail running shoes]'</span></span><span data-k="kw5">          <span class="p">-</span> <span class="s">'[waterproof trail shoes]'</span></span></pre>
+      </div>
+      <div class="panel">
+        <div class="panel-bar"><svg aria-hidden="true"><use href="#i-term"/></svg>adstack plan examples/quickstart --sandbox<span class="right"><span class="a">+15</span> <span class="c">~0</span> <span class="d">-0</span></span></div>
+<pre class="code"><span data-k="acct">Adstack will perform the following actions in Google Ads sandbox account 000-000-0000:</span><span> </span><span data-k="camp">  <span class="a">+</span> <span class="b">campaign running-shoes</span>  <span class="attr">(status = PAUSED, type = SEARCH, bidding = MANUAL_CPC, networks = Google Search only, geo_targeting = PRESENCE)</span></span><span data-k="budget">      <span class="a">+</span> daily budget  <span class="attr">(amount = 25.00 USD)</span></span><span data-k="loc">      <span class="a">+</span> location 2840</span><span data-k="neg">      <span class="a">+</span> negative keyword "free"</span><span data-k="neg">      <span class="a">+</span> negative keyword "jobs"</span><span data-k="neg">      <span class="a">+</span> negative keyword "repair"</span><span data-k="road cpc-road">      <span class="a">+</span> <span class="b">ad group road</span>  <span class="attr">(cpc_bid = 1.10 USD)</span></span><span data-k="kw1">          <span class="a">+</span> keyword [road running shoes]</span><span data-k="kw2">          <span class="a">+</span> keyword [running shoes for men]</span><span data-k="kw3">          <span class="a">+</span> keyword [running shoes for women]</span><span data-k="rsa rsa-road">          <span class="a">+</span> responsive search ad  <span class="attr">(template = running-shoes, headlines = 4, descriptions = 2, final_url = https://www.example.com/running-shoes)</span></span><span data-k="trail cpc-trail">      <span class="a">+</span> <span class="b">ad group trail</span>  <span class="attr">(cpc_bid = 1.35 USD)</span></span><span data-k="kw4">          <span class="a">+</span> keyword [trail running shoes]</span><span data-k="kw5">          <span class="a">+</span> keyword [waterproof trail shoes]</span><span data-k="rsa rsa-trail">          <span class="a">+</span> responsive search ad  <span class="attr">(template = running-shoes, headlines = 4, descriptions = 2, final_url = https://www.example.com/running-shoes)</span></span><span> </span><span><span class="b">Plan:</span> 15 to add, 0 to change, 0 to remove.</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= QUICKSTART ================= -->
+<section id="quickstart">
+  <div class="wrap split wide-r">
+    <div class="reveal">
+      <p class="eyebrow"><span class="num">02</span> quick start</p>
+      <h2>Try the whole loop without an ad account.</h2>
+      <p class="sub">The sandbox is a local JSON account in <code>.adstack/sandbox/</code>. It applies the same API operations Adstack sends to Google and enforces the same request rules: atomic requests, temporary IDs created before they're referenced, one mutation per resource. It just doesn't serve ads or bill anyone.</p>
+      <p class="sub">Needs Python 3.11 or later. Omit <code>[mcp]</code> if you only want the CLI.</p>
+    </div>
+    <div class="reveal">
+      <div class="block">
+        <div class="panel-bar"><svg aria-hidden="true"><use href="#i-term"/></svg>shell<span class="right"><button class="copy" type="button" aria-label="Copy commands" data-copy><svg aria-hidden="true"><use href="#i-copy"/></svg></button></span></div>
+<pre class="code" data-copy-src><span><span class="ps">$ </span>pip install "adstack[mcp] @ git+https://github.com/markwroberts0/adstack"</span><span> </span><span><span class="ps">$ </span>adstack init my-ads              <span class="cm"># annotated starter configuration</span></span><span><span class="ps">$ </span>adstack validate my-ads          <span class="cm"># offline checks</span></span><span><span class="ps">$ </span>adstack plan my-ads --sandbox    <span class="cm"># what would change</span></span><span><span class="ps">$ </span>adstack apply my-ads --sandbox   <span class="cm"># apply after typing 'yes'</span></span><span><span class="ps">$ </span>adstack plan my-ads --sandbox    <span class="cm"># No changes.</span></span></pre>
+      </div>
+      <div class="block">
+        <div class="panel-bar"><svg aria-hidden="true"><use href="#i-term"/></svg>against Google Ads<span class="right hint">credentials stay in your environment</span></div>
+<pre class="code"><span><span class="ps">$ </span>export GOOGLE_ADS_CUSTOMER_ID=123-456-7890</span><span><span class="ps">$ </span>export GOOGLE_ADS_CLIENT_ID=… GOOGLE_ADS_CLIENT_SECRET=… GOOGLE_ADS_REFRESH_TOKEN=…</span><span><span class="ps">$ </span>adstack plan ads/ --out launch.plan.json</span><span><span class="ps">$ </span>adstack apply launch.plan.json</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= GUARDRAILS ================= -->
+<section id="guardrails">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow"><span class="num">03</span> guardrails</p>
+      <h2>It spends real money, so it's careful by default.</h2>
+      <p class="sub">Every safety rule is enforced by the tool, not left to whoever runs it. Approving a plan is necessary but not sufficient.</p>
+    </div>
+    <div class="cards reveal">
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M9 5v14M15 5v14"/></g></svg></div>
+        <h3>New campaigns start paused</h3>
+        <p>Nothing serves until you say so with <code>--allow-enable</code>.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12a9 9 0 1 1-3-6.7"/><path d="M21 4v5h-5"/><path d="M9 12l2 2 4-4"/></g></svg></div>
+        <h3>Saved plans are re-verified</h3>
+        <p>Applying a plan file recomputes it from the live account. If anything drifted since you reviewed it, the apply is refused.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="4" width="16" height="16" rx="3"/><path d="M8 12h8"/></g></svg></div>
+        <h3>Validated, then atomic</h3>
+        <p>The request goes to Google with <code>validateOnly</code> first, then as one mutate with <code>partialFailure=false</code>. All or nothing.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 4v5c0 5-3.5 8-8 9-4.5-1-8-4-8-9V7z"/></g></svg></div>
+        <h3>Namespaced ownership</h3>
+        <p>Only campaigns named <code>adstack:&lt;namespace&gt;:…</code> are read or changed. Everything else in the account is invisible to it.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 7h16M4 12h10M4 17h6"/></g></svg></div>
+        <h3>Receipts for every apply</h3>
+        <p>What changed and what the platform returned, written to <code>.adstack/receipts/</code>. Plan files and receipts are never overwritten.</p>
+      </div>
+      <div class="card">
+        <div class="ico"><svg aria-hidden="true" viewBox="0 0 24 24"><g fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></g></svg></div>
+        <h3>No blind retries</h3>
+        <p>If the network fails mid-mutate, the outcome is unknown. Adstack says so and stops, and the next plan shows what happened.</p>
+      </div>
+    </div>
+
+    <div class="split wide-r" style="margin-top:64px">
+      <div class="reveal">
+        <h3 style="font-size:20px">Spend needs an explicit flag.</h3>
+        <p class="sub" style="font-size:15.5px">Plans list the permissions they require. Applying without them fails, even with a reviewed plan file and <code>--auto-approve</code>.</p>
+        <table class="flags" style="margin-top:22px">
+          <thead><tr><th scope="col">flag</th><th scope="col">needed when</th></tr></thead>
+          <tbody>
+            <tr><td><code>--allow-enable</code></td><td>a paused campaign starts serving</td></tr>
+            <tr><td><code>--allow-budget-increase</code></td><td>a budget or bid on an existing campaign or ad group increases</td></tr>
+            <tr><td><code>--allow-live-changes</code></td><td>anything changes in a campaign that is serving now</td></tr>
+          </tbody>
+        </table>
+        <ul class="never">
+          <li><span>Never deletes campaigns, ad groups, keywords or ads. <code>destroy</code> pauses.</span></li>
+          <li><span>Never adopts a campaign outside its namespace or converts one it doesn't understand.</span></li>
+          <li><span>Never silently changes something that isn't configured: it blocks the plan until you <code>--prune</code>.</span></li>
+        </ul>
+      </div>
+      <div class="reveal">
+        <div class="block">
+          <div class="panel-bar"><svg aria-hidden="true"><use href="#i-term"/></svg>adstack apply change.plan.json</div>
+<pre class="code"><span>    <span class="b">campaign running-shoes</span></span><span>      <span class="c">~</span> daily budget</span><span>            amount: 25.00 USD <span class="c">-&gt;</span> 40.00 USD</span><span>      <span class="c">~</span> <span class="b">ad group trail</span></span><span>            cpc_bid: 1.35 USD <span class="c">-&gt;</span> 1.50 USD</span><span>          <span class="a">+</span> keyword [trail shoes for women]</span><span> </span><span>Applying this plan also requires explicit permission:</span><span>  <span class="flag">--allow-budget-increase</span>    a budget or bid on an existing resource will increase</span><span> </span><span><span class="b">Plan:</span> 1 to add, 2 to change, 0 to remove.</span><span><span class="d b">Error:</span> this plan needs explicit permission; review it, then add <span class="flag">--allow-budget-increase</span></span></pre>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= MCP ================= -->
+<section id="mcp">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow"><span class="num">04</span> ai assistants</p>
+      <h2>Your assistant gets the same loop. Not the keys.</h2>
+      <p class="sub"><code>adstack mcp</code> serves Adstack over the Model Context Protocol, so Claude and other clients can write a configuration, validate it and show you a plan. Applying is off unless you turn it on, and even then the server never relies on the model's judgment alone.</p>
+    </div>
+    <div class="split">
+      <div class="reveal">
+        <div class="block">
+          <div class="panel-bar"><svg aria-hidden="true"><use href="#i-term"/></svg>Claude Code<span class="right"><button class="copy" type="button" aria-label="Copy command" data-copy><svg aria-hidden="true"><use href="#i-copy"/></svg></button></span></div>
+<pre class="code"><span><span class="ps">$ </span><span data-copy-src>claude mcp add adstack -- adstack mcp --sandbox --root ./ads</span></span></pre>
+        </div>
+        <div class="block">
+          <div class="panel-bar">tools<span class="right">drop <code style="font-size:11.5px">--sandbox</code> to plan against the real account</span></div>
+          <table class="tools">
+            <tr><td>validate</td><td>Check a configuration offline</td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>plan</td><td>Compute the changes; returns a <code>plan_id</code></td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>show_plan</td><td>Show a plan the server created</td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>state</td><td>List what Adstack manages</td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>report</td><td>Performance and search terms, 7–30 days</td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>example_config</td><td>Annotated example of every option</td><td><span class="tag ro">read-only</span></td></tr>
+            <tr><td>apply</td><td>Only with <code>--sandbox</code> or <code>--allow-apply</code></td><td><span class="tag rw">writes</span></td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="reveal">
+        <ol class="safeguards">
+          <li><span><strong>Off unless enabled.</strong> Without <code>--sandbox</code> or <code>--allow-apply</code> the server has no <code>apply</code> tool at all.</span></li>
+          <li><span><strong>Only reviewed plans.</strong> <code>apply</code> takes a <code>plan_id</code> from <code>plan</code>. The model can't submit arbitrary API operations.</span></li>
+          <li><span><strong>Account confirmation.</strong> The call must name the plan's account, so it's visible in the tool call your client shows you.</span></li>
+          <li><span><strong>Same permissions as the CLI.</strong> Enabling, raising spend and touching live campaigns each need their flag.</span></li>
+          <li><span><strong>Re-verified at apply time.</strong> If the account changed since you reviewed the plan, it's refused and the assistant must plan again.</span></li>
+          <li><span><strong>Contained.</strong> <code>apply</code> is annotated destructive so clients can always ask you first; paths outside <code>--root</code> are rejected.</span></li>
+        </ol>
+        <p style="margin:28px 0 0"><a class="btn" href="https://github.com/markwroberts0/adstack/blob/main/docs/mcp.md">MCP docs and Claude Desktop setup <svg aria-hidden="true"><use href="#i-arrow"/></svg></a></p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CI ================= -->
+<section id="ci">
+  <div class="wrap split">
+    <div class="reveal">
+      <p class="eyebrow"><span class="num">05</span> ci</p>
+      <h2>Ad changes go through pull requests.</h2>
+      <p class="sub">Validate every pull request offline, plan against the account in a trusted workflow, and apply the reviewed plan file deliberately. <code>plan --detailed-exitcode</code> exits <code>2</code> when there are changes, and <code>--json</code> gives machines the same plan you read.</p>
+      <p class="sub" style="font-size:15px;color:var(--muted)">Planning against a real account needs credentials. Don't expose them to workflows that run untrusted pull request code.</p>
+    </div>
+    <div class="reveal">
+      <div class="block">
+        <div class="panel-bar"><svg aria-hidden="true"><use href="#i-file"/></svg>.github/workflows/ads.yml</div>
+<pre class="code"><span><span class="k">on</span><span class="p">:</span> pull_request</span><span><span class="k">permissions</span><span class="p">:</span></span><span>  <span class="k">contents</span><span class="p">:</span> read</span><span><span class="k">jobs</span><span class="p">:</span></span><span>  <span class="k">validate</span><span class="p">:</span></span><span>    <span class="k">runs-on</span><span class="p">:</span> ubuntu-latest</span><span>    <span class="k">steps</span><span class="p">:</span></span><span>      <span class="p">-</span> <span class="k">uses</span><span class="p">:</span> actions/checkout@v4</span><span>      <span class="p">-</span> <span class="k">uses</span><span class="p">:</span> actions/setup-python@v5</span><span>        <span class="k">with</span><span class="p">:</span></span><span>          <span class="k">python-version</span><span class="p">:</span> <span class="s">"3.13"</span></span><span>      <span class="p">-</span> <span class="k">run</span><span class="p">:</span> pip install <span class="s">"adstack @ git+https://github.com/markwroberts0/adstack"</span></span><span>      <span class="p">-</span> <span class="k">run</span><span class="p">:</span> adstack validate ads/</span></pre>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CONTRIBUTE ================= -->
+<section id="contribute">
+  <div class="wrap">
+    <div class="sec-head reveal">
+      <p class="eyebrow"><span class="num">06</span> under the hood</p>
+      <h2>No state file. Identity is the name.</h2>
+      <p class="sub">Every campaign in the namespace is managed and every other campaign is ignored, so several configurations (or people) can share one account. Nothing to lock, nothing to lose.</p>
+    </div>
+    <div class="identity reveal"><span class="lit">adstack:</span><span class="var">&lt;namespace&gt;</span><span class="lit">:</span><span class="var">&lt;campaign id&gt;</span><small>Ad groups inside managed campaigns are named <code>adstack:&lt;ad group id&gt;</code>. It's a convention, not a lock: reserve the prefix for Adstack and don't rename managed campaigns by hand.</small></div>
+
+    <div class="split" style="margin-top:72px">
+      <div class="reveal">
+        <h3 style="font-size:20px">Bring your ad platform.</h3>
+        <p class="sub" style="font-size:15.5px">The workflow core knows nothing about Google Ads. A provider validates its slice of the configuration, reads the account and computes plans. Planning is pure: same input, same plan, no I/O. That's what lets saved plans be verified by recomputing them.</p>
+        <p class="sub" style="font-size:15.5px">Ship a sandbox backend with your provider and tests for an initial plan, a no-op re-plan, drift, prune, destroy and the permission flags. No network in tests, ever.</p>
+        <p style="margin:26px 0 0;display:flex;flex-wrap:wrap;gap:10px">
+          <a class="btn primary" href="https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md#adding-a-provider">Adding a provider <svg aria-hidden="true"><use href="#i-arrow"/></svg></a>
+          <a class="btn" href="https://github.com/markwroberts0/adstack/blob/main/docs/how-it-works.md">How it works</a>
+        </p>
+      </div>
+      <div class="reveal">
+        <div class="block">
+          <div class="panel-bar"><svg aria-hidden="true"><use href="#i-file"/></svg>adstack/providers/base.py</div>
+<pre class="code"><span><span class="k">class</span> Provider(Protocol):</span><span>    <span class="cm">"""An ad platform. Everything except connect is pure."""</span></span><span> </span><span>    name: <span class="n">str</span>     <span class="cm"># "google_ads"</span></span><span>    title: <span class="n">str</span>    <span class="cm"># "Google Ads"</span></span><span> </span><span>    <span class="k">def</span> load(self, settings, document) -&gt; <span class="n">dict</span>: ...</span><span>    <span class="k">def</span> summary(self, desired) -&gt; <span class="n">str</span>: ...</span><span>    <span class="k">def</span> connect(self, desired, *, sandbox_dir, env) -&gt; Backend: ...</span><span>    <span class="k">def</span> plan(self, desired, state, account, *, prune, destroy) -&gt; <span class="n">dict</span>: ...</span><span>    <span class="k">def</span> inventory(self, desired, state) -&gt; <span class="n">list</span>[<span class="n">dict</span>]: ...</span><span>    <span class="k">def</span> format_account(self, account) -&gt; <span class="n">str</span>: ...</span></pre>
+        </div>
+      </div>
+    </div>
+
+    <div style="margin-top:72px" class="reveal">
+      <h3 style="font-size:20px;margin-bottom:20px">Roadmap</h3>
+      <div class="road">
+        <div class="prov live"><span class="st"><i></i>alpha</span><h3>Google Ads</h3><p>Search campaigns, manual CPC, exact match, responsive search ads, negatives, locations.</p></div>
+        <div class="prov wanted"><span class="st"><i></i>help wanted</span><h3>Microsoft Advertising</h3><p>Closest to Google's model. A good first provider.</p></div>
+        <div class="prov wanted"><span class="st"><i></i>help wanted</span><h3>Meta</h3><p>Campaigns, ad sets and ads.</p></div>
+        <div class="prov wanted"><span class="st"><i></i>help wanted</span><h3>LinkedIn</h3><p>Campaign groups and campaigns.</p></div>
+      </div>
+      <ul class="checklist" style="margin-top:28px">
+        <li>More Google Ads features: other bidding strategies, phrase and broad keywords, display paths, assets, ad schedules</li>
+        <li>Importing existing campaigns into configuration</li>
+        <li>A JSON Schema for editor completion and validation</li>
+      </ul>
+    </div>
+
+    <div class="cta reveal">
+      <h2>Ads deserve the same rigor as infrastructure.</h2>
+      <p>Adstack is built in the open. Read the code, run it against the sandbox, open an issue, or send a provider.</p>
+      <div style="display:flex;flex-wrap:wrap;gap:10px">
+        <a class="btn primary" href="https://github.com/markwroberts0/adstack"><svg aria-hidden="true"><use href="#i-gh"/></svg> Star on GitHub</a>
+        <a class="btn" href="https://github.com/markwroberts0/adstack/issues">Open an issue</a>
+        <a class="btn" href="https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md">Contributing guide</a>
+      </div>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap">
+    <div class="foot">
+      <div>
+        <a class="brand" href="#top"><svg aria-hidden="true"><use href="#logo"/></svg>adstack</a>
+        <p style="margin:14px 0 0;max-width:34ch">Advertising campaigns as code. Open source under the Apache License 2.0.</p>
+      </div>
+      <div>
+        <h4>docs</h4>
+        <ul>
+          <li><a href="https://github.com/markwroberts0/adstack#readme">README</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/docs/configuration.md">Configuration</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/docs/how-it-works.md">How it works</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/docs/mcp.md">MCP server</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>project</h4>
+        <ul>
+          <li><a href="https://github.com/markwroberts0/adstack">Source</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/CHANGELOG.md">Changelog</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/tree/main/examples">Examples</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/issues">Issues</a></li>
+        </ul>
+      </div>
+      <div>
+        <h4>community</h4>
+        <ul>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md">Contributing</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/SECURITY.md">Security policy</a></li>
+          <li><a href="https://github.com/markwroberts0/adstack/blob/main/LICENSE">License</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="fine">
+      <span>Apache-2.0 · v0.2.0 · alpha</span>
+      <span>Google Ads is a trademark of Google LLC. Adstack is an independent open-source project and isn't affiliated with or endorsed by Google, Microsoft, Meta or LinkedIn.</span>
+    </div>
+  </div>
+</footer>
+
+<script>
+(function () {
+  "use strict";
+  var reduce = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+  /* ---------- theme ---------- */
+  var root = document.documentElement, themeBtn = document.getElementById("theme");
+  function isDark() {
+    if (root.dataset.theme) return root.dataset.theme === "dark";
+    return window.matchMedia("(prefers-color-scheme: dark)").matches;
+  }
+  function syncThemeIcon() { themeBtn.querySelector("use").setAttribute("href", isDark() ? "#i-sun" : "#i-moon"); }
+  themeBtn.addEventListener("click", function () {
+    var next = isDark() ? "light" : "dark";
+    root.dataset.theme = next;
+    try { localStorage.setItem("adstack-theme", next); } catch (e) {}
+    syncThemeIcon();
+  });
+  syncThemeIcon();
+
+  /* ---------- nav border on scroll ---------- */
+  var nav = document.getElementById("nav");
+  function onScroll() { nav.classList.toggle("scrolled", window.scrollY > 8); }
+  window.addEventListener("scroll", onScroll, { passive: true }); onScroll();
+
+  /* ---------- copy buttons ---------- */
+  document.querySelectorAll("[data-copy]").forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var scope = btn.closest(".install, .block");
+      var src = scope && scope.querySelector("[data-copy-src]");
+      if (!src) return;
+      var text = src.textContent;
+      if (src.tagName === "PRE") {
+        // Copy runnable commands only: drop prompts and trailing comments.
+        text = Array.prototype.map.call(src.children, function (l) { return l.textContent; })
+          .map(function (l) { return l.replace(/^\$\s*/, "").replace(/\s+#.*$/, ""); })
+          .filter(function (l) { return l.trim(); }).join("\n");
+      }
+      var done = function () {
+        btn.classList.add("done"); btn.querySelector("use").setAttribute("href", "#i-check");
+        setTimeout(function () { btn.classList.remove("done"); btn.querySelector("use").setAttribute("href", "#i-copy"); }, 1600);
+      };
+      if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done, function () {});
+    });
+  });
+
+  /* ---------- GitHub stars (best effort) ---------- */
+  try {
+    fetch("https://api.github.com/repos/markwroberts0/adstack", { headers: { Accept: "application/vnd.github+json" } })
+      .then(function (r) { return r.ok ? r.json() : null; })
+      .then(function (d) {
+        if (!d || typeof d.stargazers_count !== "number") return;
+        var n = d.stargazers_count;
+        document.getElementById("stars").textContent = n >= 1000 ? (n / 1000).toFixed(1).replace(/\.0$/, "") + "k" : String(n);
+      }).catch(function () {});
+  } catch (e) {}
+
+  /* ---------- reveal on scroll ---------- */
+  if (!reduce && "IntersectionObserver" in window) {
+    var io = new IntersectionObserver(function (entries) {
+      entries.forEach(function (e) { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } });
+    }, { rootMargin: "0px 0px -8% 0px" });
+    document.querySelectorAll(".reveal").forEach(function (el) { io.observe(el); });
+  } else {
+    document.querySelectorAll(".reveal").forEach(function (el) { el.classList.add("in"); });
+  }
+
+  /* ---------- linked config <-> plan ---------- */
+  var linked = document.getElementById("linked");
+  var keyed = Array.prototype.slice.call(linked.querySelectorAll("[data-k]"));
+  function activate(el) {
+    var keys = el.getAttribute("data-k").split(" ");
+    linked.classList.add("active");
+    keyed.forEach(function (n) {
+      var nk = n.getAttribute("data-k").split(" ");
+      n.classList.toggle("hl", nk.some(function (k) { return keys.indexOf(k) !== -1; }));
+    });
+  }
+  function clear() { linked.classList.remove("active"); keyed.forEach(function (n) { n.classList.remove("hl"); }); }
+  keyed.forEach(function (el) {
+    el.addEventListener("mouseenter", function () { activate(el); });
+    el.addEventListener("click", function () { activate(el); });
+  });
+  linked.addEventListener("mouseleave", clear);
+  document.addEventListener("click", function (e) { if (!linked.contains(e.target)) clear(); });
+
+  /* ---------- terminal demo ---------- */
+  // Output captured from adstack 0.2.0 running examples/quickstart against the sandbox.
+  // Lines starting with "…" mark output that was elided for length.
+  var ACCT = "Google Ads sandbox account 000-000-0000";
+  var PLAN15 = [
+    "Adstack will perform the following actions in " + ACCT + ":",
+    "",
+    "  + campaign running-shoes  (status = PAUSED, type = SEARCH, bidding = MANUAL_CPC, networks = Google Search only, geo_targeting = PRESENCE)",
+    "      + daily budget  (amount = 25.00 USD)",
+    "      + location 2840",
+    "      + negative keyword \"free\"",
+    "      + negative keyword \"jobs\"",
+    "      + negative keyword \"repair\"",
+    "      + ad group road  (cpc_bid = 1.10 USD)",
+    "          + keyword [road running shoes]",
+    "          + keyword [running shoes for men]",
+    "          + keyword [running shoes for women]",
+    "          + responsive search ad  (template = running-shoes, headlines = 4, descriptions = 2, final_url = https://www.example.com/running-shoes)",
+    "      + ad group trail  (cpc_bid = 1.35 USD)",
+    "          + keyword [trail running shoes]",
+    "          + keyword [waterproof trail shoes]",
+    "          + responsive search ad  (template = running-shoes, headlines = 4, descriptions = 2, final_url = https://www.example.com/running-shoes)",
+    "",
+    "Plan: 15 to add, 0 to change, 0 to remove."
+  ];
+  var CHANGE = [
+    "Adstack will perform the following actions in " + ACCT + ":",
+    "",
+    "    campaign running-shoes",
+    "      ~ daily budget",
+    "            amount: 25.00 USD -> 40.00 USD",
+    "      ~ ad group trail",
+    "            cpc_bid: 1.35 USD -> 1.50 USD",
+    "          + keyword [trail shoes for women]",
+    "",
+    "Applying this plan also requires explicit permission:",
+    "  --allow-budget-increase    a budget or bid on an existing resource will increase",
+    "",
+    "Plan: 1 to add, 2 to change, 0 to remove."
+  ];
+  var scenes = [
+    { id: "init", cap: "Scaffold an annotated configuration and check it offline.", steps: [
+      { cmd: "adstack init my-ads" },
+      { out: ["Created my-ads/adstack.yaml", "", "Next steps:",
+        "  1. Edit my-ads/adstack.yaml: set your namespace, currency, ads and keywords.",
+        "  2. adstack validate my-ads",
+        "  3. adstack plan my-ads --sandbox     # try it against a local sandbox account",
+        "  4. adstack plan my-ads --out first.plan.json",
+        "     adstack apply first.plan.json", "",
+        "Add .adstack/ and *.plan.json to .gitignore: they hold local state, plans and receipts."] },
+      { cmd: "adstack validate my-ads" },
+      { out: ["Success! The configuration is valid.", "Google Ads: 1 campaign, 1 ad group, 2 keywords"] }
+    ]},
+    { id: "plan", cap: "Read the account, diff it against the configuration, save the exact plan.", steps: [
+      { cmd: "adstack plan examples/quickstart --sandbox --out launch.plan.json" },
+      { out: ["Reading the " + ACCT + "..."].concat(PLAN15, ["", "Saved the plan to launch.plan.json. To apply exactly this plan, run:", "  adstack apply launch.plan.json"]) }
+    ]},
+    { id: "apply", cap: "Re-verify the saved plan, apply it atomically, and converge.", steps: [
+      { cmd: "adstack apply launch.plan.json" },
+      { out: ["Verifying launch.plan.json against the current state of the " + ACCT + "...",
+        "… plan recomputed from the live account: identical to the one you reviewed …", "",
+        "Plan: 15 to add, 0 to change, 0 to remove.", "",
+        "Apply complete! Resources: 15 added, 0 changed, 0 removed.",
+        "Receipt: .adstack/receipts/20261126T144544Z-273c9dc7639a.json"] },
+      { cmd: "adstack plan examples/quickstart --sandbox" },
+      { out: ["Reading the " + ACCT + "...", "No changes. The " + ACCT + " matches the configuration."] }
+    ]},
+    { id: "change", cap: "Raise a budget: the plan says so, and applying needs an explicit flag.", steps: [
+      { cmd: "adstack plan examples/quickstart --sandbox --out change.plan.json" },
+      { out: ["Reading the " + ACCT + "..."].concat(CHANGE, ["", "Saved the plan to change.plan.json. To apply exactly this plan, run:", "  adstack apply change.plan.json"]) },
+      { cmd: "adstack apply change.plan.json" },
+      { out: ["Verifying change.plan.json against the current state of the " + ACCT + "...",
+        "… plan body as above …", "",
+        "Error: this plan needs explicit permission; review it, then add --allow-budget-increase"] },
+      { cmd: "adstack apply change.plan.json --allow-budget-increase" },
+      { out: ["Verifying change.plan.json against the current state of the " + ACCT + "...",
+        "… plan body as above …", "",
+        "Apply complete! Resources: 1 added, 2 changed, 0 removed.",
+        "Receipt: .adstack/receipts/20261126T144545Z-7e01dbb18394.json"] }
+    ]}
+  ];
+
+  function esc(s) { return s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function color(line) {
+    var s = esc(line), m;
+    if (/^…/.test(line)) return '<span class="el">' + s + "</span>";
+    if (/^(Reading|Verifying) /.test(line)) return '<span class="dim">' + s + "</span>";
+    if ((m = s.match(/^(\s*)([+~-]) (.*)$/))) {
+      var cls = m[2] === "+" ? "a" : m[2] === "~" ? "c" : "d";
+      var rest = m[3].replace(/^((?:campaign|ad group) [\w-]+)/, '<span class="b">$1</span>')
+                     .replace(/(\s\s)(\(.*\))$/, '$1<span class="attr">$2</span>');
+      return m[1] + '<span class="' + cls + '">' + m[2] + "</span> " + rest;
+    }
+    if (/^\s{4}campaign /.test(line)) return s.replace(/(campaign [\w-]+)/, '<span class="b">$1</span>');
+    s = s.replace(/ -&gt; /g, ' <span class="c">-&gt;</span> ');
+    s = s.replace(/(--allow-[a-z-]+)/g, '<span class="flag">$1</span>');
+    s = s.replace(/(\s+)(# .*)$/, '$1<span class="dim">$2</span>');
+    s = s.replace(/^(Plan:)/, '<span class="b">$1</span>');
+    s = s.replace(/^(Error:)/, '<span class="d b">$1</span>');
+    s = s.replace(/^(Success!|Apply complete!|No changes\.)/, '<span class="a b">$1</span>');
+    s = s.replace(/^(Receipt:|Saved the plan to)/, '<span class="dim">$1</span>');
+    return s;
+  }
+
+  var body = document.getElementById("term-body"), tabsEl = document.getElementById("term-tabs"), cap = document.getElementById("term-cap");
+  var run = 0, current = 0, autoplay = true, tabs = [];
+  scenes.forEach(function (sc, i) {
+    var b = document.createElement("button");
+    b.type = "button"; b.className = "term-tab"; b.setAttribute("role", "tab"); b.id = "tab-" + sc.id;
+    b.innerHTML = '<span class="n">' + (i + 1) + "</span>" + sc.id;
+    b.addEventListener("click", function () { autoplay = false; play(i, false); });
+    b.addEventListener("keydown", function (e) {
+      if (e.key === "ArrowRight" || e.key === "ArrowLeft") {
+        e.preventDefault();
+        var n = (i + (e.key === "ArrowRight" ? 1 : scenes.length - 1)) % scenes.length;
+        tabs[n].focus(); autoplay = false; play(n, false);
+      }
+    });
+    tabsEl.appendChild(b); tabs.push(b);
+  });
+
+  function wait(ms) { return new Promise(function (r) { setTimeout(r, ms); }); }
+  function line(html) { var d = document.createElement("div"); d.className = "ln"; d.innerHTML = html; body.appendChild(d); body.scrollTop = body.scrollHeight; return d; }
+  function render(i) {
+    body.innerHTML = "";
+    scenes[i].steps.forEach(function (st) {
+      if (st.cmd) line('<span class="ps">$ </span><span class="cmd">' + esc(st.cmd) + "</span>");
+      else st.out.forEach(function (l) { line(color(l)); });
+    });
+    line('<span class="ps">$ </span><span class="caret"></span>');
+  }
+  function select(i) {
+    current = i;
+    tabs.forEach(function (t, j) { t.setAttribute("aria-selected", j === i ? "true" : "false"); t.tabIndex = j === i ? 0 : -1; });
+    body.setAttribute("aria-labelledby", tabs[i].id);
+    cap.textContent = scenes[i].cap;
+  }
+  async function play(i, instant) {
+    var id = ++run; select(i);
+    if (instant || reduce) { render(i); body.scrollTop = 0; return; }
+    body.innerHTML = "";
+    for (var s = 0; s < scenes[i].steps.length; s++) {
+      var st = scenes[i].steps[s];
+      if (st.cmd) {
+        var d = line('<span class="ps">$ </span><span class="cmd"></span><span class="caret"></span>');
+        var c = d.querySelector(".cmd");
+        await wait(s === 0 ? 350 : 650); if (id !== run) return;
+        for (var k = 0; k < st.cmd.length; k++) {
+          c.textContent += st.cmd[k];
+          await wait(18 + Math.random() * 38); if (id !== run) return;
+        }
+        await wait(260); if (id !== run) return;
+        d.querySelector(".caret").remove();
+      } else {
+        for (var j = 0; j < st.out.length; j++) {
+          line(color(st.out[j]));
+          await wait(j === 0 ? 320 : 22); if (id !== run) return;
+        }
+      }
+    }
+    line('<span class="ps">$ </span><span class="caret"></span>');
+    if (autoplay && i < scenes.length - 1) {
+      await wait(2600); if (id !== run || !autoplay) return;
+      play(i + 1, false);
+    }
+  }
+  document.getElementById("term-replay").addEventListener("click", function () { autoplay = true; play(0, false); });
+  document.getElementById("term-skip").addEventListener("click", function () { autoplay = false; play(current, true); });
+
+  // Start when the terminal scrolls into view (it usually already is).
+  var started = false, termEl = document.getElementById("term");
+  function start() { if (!started) { started = true; play(0, false); } }
+  if ("IntersectionObserver" in window && !reduce) {
+    var tio = new IntersectionObserver(function (e) { if (e[0].isIntersecting) { start(); tio.disconnect(); } }, { threshold: .25 });
+    tio.observe(termEl);
+  } else { select(0); render(0); }
+})();
+</script>
+</body>
+</html>
