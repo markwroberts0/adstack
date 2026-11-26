@@ -1,0 +1,30 @@
+version: 1
+
+campaigns:
+  - id: subscriptions
+    status: PAUSED
+    daily_budget: 40.00
+    default_cpc: 1.20
+    locations: [2840]
+    negative_keywords: ['"free"', '"k-cup"', '"starbucks"']
+    ad_groups:
+      - id: coffee-subscription
+        ad_template: subscription
+        keywords:
+          - '[coffee subscription]'
+          - '[coffee bean subscription]'
+          - '[monthly coffee delivery]'
+      - id: gifts
+        cpc: 1.50
+        ad:                           # an inline ad instead of a template
+          final_url: https://www.example.com/gifts
+          headlines:
+            - The Gift Of Great Coffee
+            - Coffee Gift Subscriptions
+            - Prepaid 3, 6 Or 12 Months
+          descriptions:
+            - Give fresh-roasted coffee delivered to their door. Add a personal note at checkout.
+            - Prepaid gift subscriptions with no renewal. Choose a start date that suits you.
+        keywords:
+          - '[coffee subscription gift]'
+          - '[coffee gift for dad]'

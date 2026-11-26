@@ -1,18 +1,48 @@
-name: Offline validation
+name: CI
+
 on:
   push:
   pull_request:
+
 permissions:
   contents: read
+
 jobs:
   test:
+    name: Test (Python ${{ matrix.python-version }})
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - run: pip install -e '.[dev]'
+      - run: ruff check .
+      - run: ruff format --check .
+      - run: pytest -q
+      - name: Validate the examples and plan them against the sandbox
+        run: |
+          for example in examples/*/; do
+            adstack validate "$example"
+            adstack plan "$example" --sandbox
+          done
+
+  build:
+    name: Build the package
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
-          python-version: '3.12'
-      - run: pip install -e '.[dev]'
-      - run: ads validate examples/klora.yaml
-      - run: ads preview examples/klora.yaml
-      - run: pytest -q
+          python-version: "3.13"
+      - run: pip install build
+      - run: python -m build
+      - name: Install the wheel and run it
+        run: |
+          pip install dist/*.whl
+          adstack --version
+          adstack validate examples/quickstart

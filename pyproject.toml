@@ -1,22 +1,59 @@
 [build-system]
-requires = ["setuptools>=68"]
+requires = ["setuptools>=77"]
 build-backend = "setuptools.build_meta"
 
 [project]
-name = "adstack-cli"
-version = "0.1.0"
-description = "Declarative Google Search campaigns with reviewable plans"
+name = "adstack"
+dynamic = ["version"]
+description = "Advertising campaigns as code: declarative configuration, reviewable plans, safe applies, and an MCP server for AI assistants."
+readme = "README.md"
+license = "Apache-2.0"
+license-files = ["LICENSE"]
 requires-python = ">=3.11"
+authors = [{ name = "Adstack contributors" }]
+keywords = ["ads-as-code", "google-ads", "advertising", "ppc", "infrastructure-as-code", "terraform", "mcp"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Information Technology",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business",
+    "Topic :: System :: Systems Administration",
+]
 dependencies = ["PyYAML>=6,<7", "requests>=2.31,<3"]
 
 [project.optional-dependencies]
-dev = ["pytest>=8,<10"]
+mcp = ["mcp>=2.3,<3"]
+dev = ["pytest>=8,<10", "ruff>=0.15", "build>=1.2", "mcp>=2.3,<3"]
+
+[project.urls]
+Homepage = "https://github.com/markwroberts0/adstack"
+Documentation = "https://github.com/markwroberts0/adstack/tree/main/docs"
+Issues = "https://github.com/markwroberts0/adstack/issues"
+Changelog = "https://github.com/markwroberts0/adstack/blob/main/CHANGELOG.md"
 
 [project.scripts]
-ads = "adstack.cli:main"
+adstack = "adstack.cli:main"
+
+[tool.setuptools.dynamic]
+version = { attr = "adstack.__version__" }
 
 [tool.setuptools.packages.find]
 include = ["adstack*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff]
+line-length = 120
+target-version = "py311"
+
+[tool.ruff.lint]
+select = ["E", "F", "W", "I", "B", "UP", "SIM", "RUF"]
+ignore = ["SIM108", "RUF001"]

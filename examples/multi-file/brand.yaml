@@ -1,0 +1,13 @@
+version: 1
+
+campaigns:
+  - id: brand
+    status: PAUSED
+    daily_budget: 15.00
+    default_cpc: 0.60
+    locations: [2840, 2124]           # United States, Canada
+    negative_keywords: ['"jobs"', '"careers"']
+    ad_groups:
+      - id: brand-name
+        ad_template: brand
+        keywords: ['[example coffee]', '[example coffee co]', '[example coffee roasters]']

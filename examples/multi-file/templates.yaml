@@ -1,0 +1,22 @@
+version: 1
+
+ad_templates:
+  brand:
+    final_url: https://www.example.com/
+    headlines:
+      - Example Coffee Co. Official
+      - Small-Batch Roasted Coffee
+      - Free Shipping Over $30
+    descriptions:
+      - Fresh coffee roasted to order and shipped within 48 hours. Shop the official store.
+      - Single origins, blends and decaf. Satisfaction guaranteed or your money back.
+  subscription:
+    final_url: https://www.example.com/subscribe
+    headlines:
+      - Coffee Delivered Monthly
+      - Skip Or Cancel Anytime
+      - Roasted To Order
+      - Save 15% On Every Bag
+    descriptions:
+      - Fresh beans on your schedule. Choose your roast, grind and delivery frequency.
+      - Subscribe and save 15% on every bag. Skip, pause or cancel online at any time.

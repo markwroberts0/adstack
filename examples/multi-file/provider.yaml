@@ -1,0 +1,11 @@
+# A configuration split across files, like a Terraform module. Adstack reads every
+# *.yaml file in this directory: `adstack plan examples/multi-file --sandbox`.
+version: 1
+
+provider:
+  google_ads:
+    namespace: example-coffee
+    currency: USD
+    limits:               # tighter typo guards than the defaults
+      daily_budget: 200
+      cpc: 5

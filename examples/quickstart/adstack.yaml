@@ -1,0 +1,44 @@
+# One Google Search campaign for a fictional online running-shoe store.
+#
+#   adstack validate examples/quickstart
+#   adstack plan examples/quickstart --sandbox
+version: 1
+
+provider:
+  google_ads:
+    namespace: example
+    currency: USD
+    # customer_id: 123-456-7890   # or set GOOGLE_ADS_CUSTOMER_ID
+
+ad_templates:
+  running-shoes:
+    final_url: https://www.example.com/running-shoes
+    headlines:
+      - Running Shoes For Every Pace
+      - Road, Trail And Track Shoes
+      - Free Returns On All Shoes
+      - Find Your Perfect Fit
+    descriptions:
+      - Road, trail and track shoes from leading brands. Free shipping on orders over $50.
+      - Not the right fit? Return any pair within 60 days for a full refund.
+
+campaigns:
+  - id: running-shoes
+    status: PAUSED
+    daily_budget: 25.00
+    default_cpc: 1.10
+    locations: [2840]                 # United States
+    negative_keywords: ['"free"', '"jobs"', '"repair"']
+    ad_groups:
+      - id: road
+        ad_template: running-shoes
+        keywords:
+          - '[road running shoes]'
+          - '[running shoes for men]'
+          - '[running shoes for women]'
+      - id: trail
+        ad_template: running-shoes
+        cpc: 1.35                     # overrides default_cpc
+        keywords:
+          - '[trail running shoes]'
+          - '[waterproof trail shoes]'
