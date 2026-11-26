@@ -57,6 +57,10 @@ Ship a sandbox backend with the provider, plus tests covering at least: an initi
 - Add or update tests; `pytest`, `ruff check` and `ruff format --check` must pass.
 - For changes to API payloads or queries, link the platform documentation you relied on, and say whether you tested against a real (test) account.
 
+## Project page
+
+The project page is a single static file, [`site/index.html`](site/index.html), with no build step: open it in a browser to preview it. Pushes to `main` that touch `site/` publish it to GitHub Pages through [`.github/workflows/pages.yml`](.github/workflows/pages.yml) (in the repository settings, Pages must use **GitHub Actions** as its source). The terminal demo replays real `adstack` output, so update it when the CLI's output changes.
+
 ## Reporting bugs
 
 Open an issue with the Adstack version, the command you ran, the configuration (redact anything private) and the output. Never paste credentials, plan files or receipts from a real account into an issue: they contain account details. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
