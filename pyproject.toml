@@ -1,0 +1,22 @@
+[build-system]
+requires = ["setuptools>=68"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "adstack-cli"
+version = "0.1.0"
+description = "Declarative Google Search campaigns with reviewable plans"
+requires-python = ">=3.11"
+dependencies = ["PyYAML>=6,<7", "requests>=2.31,<3"]
+
+[project.optional-dependencies]
+dev = ["pytest>=8,<10"]
+
+[project.scripts]
+ads = "adstack.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["adstack*"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

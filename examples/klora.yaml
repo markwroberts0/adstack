@@ -1,0 +1,107 @@
+version: 1
+namespace: klora
+currency: USD
+campaign:
+  id: competitor-search
+  status: PAUSED
+  daily_budget: 10.00
+  default_cpc: 0.75
+  locations: [2840] # United States; presence only
+  negative_keywords:
+    - '"login"'
+    - '"customer support"'
+    - '"refund"'
+    - '"crack"'
+    - '"apk"'
+    - '"jobs"'
+    - '"crop rotation"'
+    - '"plant identification"'
+  ad_groups:
+    - id: iscape
+      ad_template: traditional
+      keywords: ['[iscape]', '[iscape app]', '[iscape alternative]', '[iscape pricing]', '[iscape landscape design]']
+    - id: artifact-garden-planner
+      ad_template: traditional
+      keywords: ['[smallblueprinter]', '[small blue printer garden planner]', '[artifact interactive garden planner]']
+    - id: neighborbrite
+      ad_template: ai-alternative
+      keywords: ['[neighborbrite]', '[neighborbrite app]', '[neighborbrite alternative]', '[neighborbrite pricing]']
+    - id: gardenpuzzle
+      ad_template: traditional
+      keywords: ['[gardenpuzzle]', '[garden puzzle app]', '[garden puzzle alternative]']
+    - id: sow
+      ad_template: ai-alternative
+      keywords: ['[sow garden app]', '[sow garden planner]', '[sow landscape design]', '[usesow]']
+    - id: realtime-landscaping
+      ad_template: traditional
+      keywords: ['[realtime landscaping]', '[realtime landscaping plus]', '[realtime landscaping pro]', '[realtime landscaping architect]', '[realtime landscaping alternative]', '[idea spectrum]']
+    - id: dreamzar
+      ad_template: ai-alternative
+      keywords: ['[dreamzar]', '[dreamzar app]', '[dreamzar alternative]']
+    - id: hortisketch
+      ad_template: planting
+      keywords: ['[hortisketch]', '[hortisketch alternative]', '[garden savvy app]']
+    - id: bloomseye
+      ad_template: planting
+      keywords: ['[bloomseye]', '[bloomseye studio]', '[bloomseye alternative]']
+    - id: seasonry
+      ad_template: planting
+      keywords: ['[seasonry]', '[seasonry app]', '[seasonry garden planner]']
+    - id: flora-sketch
+      ad_template: planting
+      keywords: ['[flora sketch]', '[florasketch]', '[flora sketch app]']
+    - id: native-garden-planner
+      ad_template: planting
+      keywords: ['[nativegardenplanner.com]', '[native garden planner app]']
+    - id: garden-planner-online
+      ad_template: traditional
+      keywords: ['[gardenplanner.net]']
+    - id: gardenia
+      ad_template: planting
+      keywords: ['[gardenia garden planner]', '[gardenia design tool]']
+    - id: shoot-gardening
+      ad_template: planting
+      keywords: ['[shoot gardening]', '[shoot garden planner]']
+    - id: pollinator-patch
+      ad_template: planting
+      keywords: ['[pollinator patch app]']
+    - id: planimity
+      ad_template: traditional
+      keywords: ['[planimity]', '[planimity garden planner]']
+ad_templates:
+  traditional:
+    final_url: https://kloragarden.com/
+    headlines:
+      - Free Landscape Design Tool
+      - Design Your Garden To Scale
+      - Plan Your Planting Beds
+      - Try Klora For Free
+      - Garden Design In Your Browser
+      - Plan With Real Plants
+    descriptions:
+      - Draw your yard to scale, choose plants and get a shopping list. Start designing free.
+      - Plan for sunlight, plant spacing and seasonal color before you start planting.
+  ai-alternative:
+    final_url: https://kloragarden.com/
+    headlines:
+      - Create A Real Planting Plan
+      - Free Garden Design Software
+      - Design Your Yard To Scale
+      - Choose Plants For Your Yard
+      - Try Klora For Free
+      - See Your Garden Take Shape
+    descriptions:
+      - Draw a measured garden layout, choose suitable plants and plan your planting beds.
+      - Check sunlight and mature plant sizes. Get a shopping list as you design.
+  planting:
+    final_url: https://kloragarden.com/
+    headlines:
+      - Plan Your Garden For Free
+      - See What Blooms Each Season
+      - Design Flower Beds To Scale
+      - Plan For Mature Plant Sizes
+      - Choose Plants For Your Yard
+      - Try Klora For Free
+    descriptions:
+      - Design planting beds to scale and plan for mature plant sizes and seasonal blooms.
+      - Check your garden's sunlight, find suitable plants and build a shopping list for free.
