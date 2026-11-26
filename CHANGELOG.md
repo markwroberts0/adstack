@@ -1,8 +1,8 @@
 # Changelog
 
-## 0.2.0 (unreleased)
+## 0.2.0 (2026-11-26)
 
-Adstack is now a general-purpose, open-source tool with a Terraform-style workflow and an MCP server.
+The first release on PyPI. Adstack is now a general-purpose, open-source tool with a Terraform-style workflow and an MCP server.
 
 ### Added
 

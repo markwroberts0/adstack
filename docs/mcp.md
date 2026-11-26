@@ -2,7 +2,7 @@
 
 `adstack mcp` serves Adstack over the [Model Context Protocol](https://modelcontextprotocol.io) (stdio), so an AI assistant can write a configuration, validate it, show you a plan, and, if you allow it, apply that plan after you approve it.
 
-Install the extra first: `pip install "adstack[mcp] @ git+https://github.com/markwroberts0/adstack"`.
+Install it with the `mcp` extra: `pip install "adstack[mcp]"`.
 
 ## Modes
 

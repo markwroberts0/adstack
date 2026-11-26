@@ -1,0 +1,6 @@
+# Ship the tests, examples and docs in the source distribution, so it is self-contained.
+include CHANGELOG.md CONTRIBUTING.md SECURITY.md
+graft docs
+graft examples
+graft tests
+global-exclude __pycache__ *.py[cod]

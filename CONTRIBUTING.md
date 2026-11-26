@@ -64,3 +64,11 @@ The project page is a single static file, [`site/index.html`](site/index.html), 
 ## Reporting bugs
 
 Open an issue with the Adstack version, the command you ran, the configuration (redact anything private) and the output. Never paste credentials, plan files or receipts from a real account into an issue: they contain account details. Report security problems privately, as described in [SECURITY.md](SECURITY.md).
+
+## Releasing
+
+Releases are published to PyPI by [`.github/workflows/release.yml`](.github/workflows/release.yml) with PyPI [Trusted Publishing](https://docs.pypi.org/trusted-publishers/), so no API token is stored anywhere.
+
+1. Set the new version in `adstack/__init__.py` and move the changes in `CHANGELOG.md` under that version and date.
+2. Merge to `main`, then push a matching tag: `git tag v0.2.1 && git push origin v0.2.1`.
+3. The workflow checks that the tag matches the version, builds the package, runs the tests against the built wheel and publishes it. PyPI versions can't be replaced, so a broken release is fixed with a new version.

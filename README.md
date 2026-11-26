@@ -1,9 +1,10 @@
 # Adstack
 
-**Advertising campaigns as code.** Declare campaigns in YAML, review a plan of exactly what will change, then apply it: the workflow Terraform uses for infrastructure, built for ad platforms. An [MCP server](docs/mcp.md) lets AI assistants such as Claude validate, plan and (when you allow it) apply changes too.
+**Advertising campaigns as code.** Declare campaigns in YAML, review a plan of exactly what will change, then apply it: the workflow Terraform uses for infrastructure, built for ad platforms. An [MCP server](https://github.com/markwroberts0/adstack/blob/main/docs/mcp.md) lets AI assistants such as Claude validate, plan and (when you allow it) apply changes too.
 
 [![CI](https://github.com/markwroberts0/adstack/actions/workflows/ci.yml/badge.svg)](https://github.com/markwroberts0/adstack/actions/workflows/ci.yml)
-[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![PyPI](https://img.shields.io/pypi/v/adstack.svg)](https://pypi.org/project/adstack/)
+[![License: Apache-2.0](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](https://github.com/markwroberts0/adstack/blob/main/LICENSE)
 
 ```console
 $ adstack plan --out launch.plan.json
@@ -37,17 +38,17 @@ This is the plan for the configuration shown [below](#configuration).
 - **AI-ready.** The MCP server gives assistants the same validate → plan → apply loop, with applying disabled unless you turn it on.
 - **Try it offline.** A local sandbox account runs the whole workflow without an ad account or credentials.
 
-**Status: alpha.** The first provider is **Google Ads** (Search campaigns with manual CPC bidding, exact-match keywords, responsive search ads, negative keywords and location targeting). The plan/apply logic is covered by tests against the sandbox, but the REST integration has not yet been exercised against a live Google Ads account; run it against a [test account](https://developers.google.com/google-ads/api/docs/best-practices/test-accounts) first. More providers are welcome; see [CONTRIBUTING.md](CONTRIBUTING.md).
+**Status: alpha.** The first provider is **Google Ads** (Search campaigns with manual CPC bidding, exact-match keywords, responsive search ads, negative keywords and location targeting). The plan/apply logic is covered by tests against the sandbox, but the REST integration has not yet been exercised against a live Google Ads account; run it against a [test account](https://developers.google.com/google-ads/api/docs/best-practices/test-accounts) first. More providers are welcome; see [CONTRIBUTING.md](https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md).
 
 ## Install
 
 Adstack needs Python 3.11 or later.
 
 ```bash
-pip install "adstack[mcp] @ git+https://github.com/markwroberts0/adstack"   # CLI and MCP server
+pip install "adstack[mcp]"   # CLI and MCP server
 ```
 
-Omit `[mcp]` if you only need the CLI. To work on Adstack itself, see [CONTRIBUTING.md](CONTRIBUTING.md).
+Omit `[mcp]` if you only need the CLI. To work on Adstack itself, see [CONTRIBUTING.md](https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md).
 
 ## Quick start (no ad account needed)
 
@@ -59,7 +60,7 @@ adstack apply my-ads --sandbox        # apply after typing 'yes'
 adstack plan my-ads --sandbox         # No changes.
 ```
 
-The sandbox lives in `.adstack/sandbox/` in the current directory. It applies the same API operations Adstack sends to Google and enforces the same request rules, but it does not review ads or serve them. Two complete examples are in [`examples/`](examples/).
+The sandbox lives in `.adstack/sandbox/` in the current directory. It applies the same API operations Adstack sends to Google and enforces the same request rules, but it does not review ads or serve them. Two complete examples are in [`examples/`](https://github.com/markwroberts0/adstack/tree/main/examples/).
 
 ## Configuration
 
@@ -95,7 +96,7 @@ campaigns:
         keywords: ['[road running shoes]', '[running shoes for men]']
 ```
 
-Every option is described in [docs/configuration.md](docs/configuration.md).
+Every option is described in [docs/configuration.md](https://github.com/markwroberts0/adstack/blob/main/docs/configuration.md).
 
 ## Commands
 
@@ -131,7 +132,7 @@ Adstack uses the Google Ads REST API (v26). Since September 9, 2026, API access 
 1. In [Google Cloud Console](https://console.cloud.google.com/apis/library/googleads.googleapis.com), select or create a project and enable the Google Ads API.
 2. Request an [access level](https://developers.google.com/google-ads/api/docs/api-policy/access-levels) for the project. Test access works only with Google Ads test accounts; start there if you can.
 3. Configure the OAuth consent screen and create a Desktop OAuth client. The Google user who authorizes it must have access to the Google Ads account. Obtain a refresh token with the `https://www.googleapis.com/auth/adwords` scope ([Google's OAuth guide](https://developers.google.com/google-ads/api/docs/oauth/overview)). While an external consent screen is in Testing mode, refresh tokens can expire after seven days.
-4. Set the credentials in your environment or secret manager. Never commit them. See [`.env.example`](.env.example).
+4. Set the credentials in your environment or secret manager. Never commit them. See [`.env.example`](https://github.com/markwroberts0/adstack/blob/main/.env.example).
 
 ```bash
 export GOOGLE_ADS_CUSTOMER_ID=123-456-7890        # or provider.google_ads.customer_id
@@ -150,7 +151,7 @@ Then use the commands without `--sandbox`. Before enabling a campaign, check bil
 claude mcp add adstack -- adstack mcp --sandbox --root /path/to/your/ads    # Claude Code, sandbox
 ```
 
-The server's tools are `validate`, `plan`, `show_plan`, `state`, `report` and `example_config`. A configuration can be a path inside `--root` or YAML text. The `apply` tool appears only with `--sandbox` or `--allow-apply`. It accepts only a plan the server created, requires the account ID as confirmation and the same permission flags as the CLI, and re-verifies the plan against the live account. See [docs/mcp.md](docs/mcp.md) for Claude Desktop and other clients.
+The server's tools are `validate`, `plan`, `show_plan`, `state`, `report` and `example_config`. A configuration can be a path inside `--root` or YAML text. The `apply` tool appears only with `--sandbox` or `--allow-apply`. It accepts only a plan the server created, requires the account ID as confirmation and the same permission flags as the CLI, and re-verifies the plan against the live account. See [docs/mcp.md](https://github.com/markwroberts0/adstack/blob/main/docs/mcp.md) for Claude Desktop and other clients.
 
 ## Use in CI
 
@@ -169,7 +170,7 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.13"
-      - run: pip install "adstack @ git+https://github.com/markwroberts0/adstack"
+      - run: pip install adstack
       - run: adstack validate ads/
 ```
 
@@ -177,7 +178,7 @@ Planning against the real account needs credentials. Don't expose them to workfl
 
 ## How it works
 
-Adstack keeps no state file. A campaign's identity is its name, `adstack:<namespace>:<campaign id>`, so every campaign in the namespace is managed and every other campaign is ignored. Each plan reads the account, compares it with the configuration, and lists every change, blocker and required permission. Applying sends one atomic request. The details, including what Adstack deliberately doesn't manage, are in [docs/how-it-works.md](docs/how-it-works.md).
+Adstack keeps no state file. A campaign's identity is its name, `adstack:<namespace>:<campaign id>`, so every campaign in the namespace is managed and every other campaign is ignored. Each plan reads the account, compares it with the configuration, and lists every change, blocker and required permission. Applying sends one atomic request. The details, including what Adstack deliberately doesn't manage, are in [docs/how-it-works.md](https://github.com/markwroberts0/adstack/blob/main/docs/how-it-works.md).
 
 ## Roadmap
 
@@ -190,8 +191,8 @@ Ideas and pull requests are welcome.
 
 ## Contributing
 
-See [CONTRIBUTING.md](CONTRIBUTING.md). Please report security issues privately, as described in [SECURITY.md](SECURITY.md).
+See [CONTRIBUTING.md](https://github.com/markwroberts0/adstack/blob/main/CONTRIBUTING.md). Please report security issues privately, as described in [SECURITY.md](https://github.com/markwroberts0/adstack/blob/main/SECURITY.md).
 
 ## License
 
-[Apache License 2.0](LICENSE).
+[Apache License 2.0](https://github.com/markwroberts0/adstack/blob/main/LICENSE).
